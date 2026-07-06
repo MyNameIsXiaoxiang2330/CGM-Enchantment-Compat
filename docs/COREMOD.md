@@ -118,7 +118,11 @@ Runtime (game tick loop):
 
 ### Why CoreMod instead of alternatives?
 
-The decision traces back to a real-world dependency catastrophe. Another modding project required **three** separate pre-installed mods just to function — each with its own strict version requirement — and the result was a chain reaction of version conflicts where the mods either failed to detect each other or actively rejected one another. That experience cemented a hard rule:
+The decision traces back to a real-world dependency catastrophe. Another modding project required **three** separate pre-installed mods just to function — a base mod locked at a specific patch version, a compatibility library, and a patching framework — and the result was a chain reaction of version conflicts where the four mods either failed to detect each other or actively rejected one another.
+
+> If you ask "why not use the obvious alternative?", the story above is what you'll hear. Every single time. It is the root of every technical decision in this project.
+
+That experience cemented a hard rule:
 
 > **The mod should depend on as little as possible.**
 
@@ -290,7 +294,11 @@ CGM 原始类:                    本模组注入后:
 
 ### 为什么在上述风险下仍然选择 CoreMod？
 
-这个决定的根源来自一次真实的前置灾难。另一个模组项目需要**三个**独立前置模组才能运行——每个都有自己严格的版本要求——结果就是一连串的版本冲突：模组之间要么互相检测不到，要么直接互相排斥。那次经历确立了一条铁律：
+这个决定的根源来自一次真实的前置灾难。另一个模组项目需要**三个**独立前置模组才能运行——一个锁死在特定补丁版本的基础模组、一个兼容库、和一个补丁框架——每个都有自己严格的版本要求——结果就是四个模组之间要么互相检测不到，要么直接互相排斥。
+
+> 如果你问"为什么不用那个显而易见的替代方案？"——上面这段故事就是你会听到的回答。每一次都是。它是这个项目一切技术决策的根源。
+
+那次经历确立了一条铁律：
 
 > **模组应该尽可能不依赖任何东西。**
 
