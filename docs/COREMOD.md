@@ -143,6 +143,7 @@ SRP V1.10.7          Cotesia Glomerata V1.3.4h1
        but found (int, int, boolean, CallbackInfo)
               │
      EntityParasiteBase fails to load → Game crashes at startup.
+```
 
 This is not a hypothetical. It happened.
 
@@ -347,6 +348,7 @@ SRP V1.10.7          寄生蜂 V1.3.4h1
        but found (int, int, boolean, CallbackInfo)
               │
      EntityParasiteBase 加载失败 → 游戏启动即崩溃。
+```
 
 这不是假设，它发生了。
 
