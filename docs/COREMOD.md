@@ -118,7 +118,15 @@ Runtime (game tick loop):
 
 ### Why CoreMod instead of alternatives?
 
-The decision traces back to a real-world dependency catastrophe. Another modding project required **three** separate pre-installed mods just to function — a base mod locked at a specific patch version, a compatibility library, and a patching framework — and the result was a chain reaction of version conflicts where the four mods either failed to detect each other or actively rejected one another.
+The decision traces back to a real-world dependency catastrophe. An addon for **Scape and Run: Parasites** (Cotesia Glomerata) required **three** separate pre-installed mods just to function:
+
+- **Scape and Run: Parasites** (locked at patch version V1.9.21)
+- **GeckoLib** (animation library)
+- **MixinBooter** (Mixin loader for 1.12.2 Forge)
+
+The result: the four mods — SRP, Cotesia Glomerata, GeckoLib, and MixinBooter — **sometimes failed to detect each other, sometimes actively rejected each other**, despite all version requirements being technically satisfied. This was not a bug in any single mod. It was the dependency chain itself that was fragile.
+
+> **This is not a critique of Mixin.** Mixin is a proven tool and CGM 1.19+ uses it extensively without issue. The problem is specific to the 1.12.2 Forge ecosystem, where loading a bytecode patching framework requires installing a separate loader mod, which in turn must coexist with other mods that may also depend on incompatible versions of the same loader.
 
 > If you ask "why not use the obvious alternative?", the story above is what you'll hear. Every single time. It is the root of every technical decision in this project.
 
@@ -294,7 +302,15 @@ CGM 原始类:                    本模组注入后:
 
 ### 为什么在上述风险下仍然选择 CoreMod？
 
-这个决定的根源来自一次真实的前置灾难。另一个模组项目需要**三个**独立前置模组才能运行——一个锁死在特定补丁版本的基础模组、一个兼容库、和一个补丁框架——每个都有自己严格的版本要求——结果就是四个模组之间要么互相检测不到，要么直接互相排斥。
+这个决定的根源来自一次真实的前置灾难。一个叫 **Cotesia Glomerata**（寄生蜂）的 **逃逸：寄生体 (SRP)** 插件，需要**三个**独立前置模组才能运行：
+
+- **逃逸：寄生体 (SRP)**（锁死补丁版本 V1.9.21）
+- **GeckoLib**（动画库）
+- **MixinBooter**（1.12.2 Forge 的 Mixin 加载器）
+
+结果：SRP、寄生蜂、GeckoLib、MixinBooter 这四个模组——**有时候互相检测不到，有时候又直接互相排斥**——尽管所有版本要求都满足了。这不是任何一个模组的 bug，是依赖链本身就脆弱。
+
+> **这不是对 Mixin 的批评。** Mixin 是经过验证的工具，CGM 1.19+ 大量使用了它且运行良好。问题出在 1.12.2 Forge 生态：加载字节码补丁框架需要额外安装一个加载器模组，而这个加载器又必须和其他可能依赖同一加载器（但版本不同）的模组共存。
 
 > 如果你问"为什么不用那个显而易见的替代方案？"——上面这段故事就是你会听到的回答。每一次都是。它是这个项目一切技术决策的根源。
 

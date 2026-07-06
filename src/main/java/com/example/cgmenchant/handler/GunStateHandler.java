@@ -20,16 +20,31 @@ package com.example.cgmenchant.handler;
 
 import com.example.cgmenchant.enchant.ModEnchantments;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class GunStateHandler {
 
     private static final String AMMO_KEY = "AmmoCount";
     private static final String PREV_AMMO_KEY = "cgm_prev_ammo";
     private static final String QH_TICK_KEY = "qh_tick";
+
+    /**
+     * 每种枪型的原始弹容量缓存。
+     *
+     * 为什么需要这个？
+     * CGM 的 Gun.general.maxAmmo 是共享可变字段——同一枪型的所有实例共享一个 Gun 对象。
+     * 超容量附魔会把共享字段改成 boosted 值，导致普通枪也读到被污染的值。
+     * 此缓存在第一次遇到某枪型时快照原始值，之后所有"原始值"查询都走缓存，
+     * 不再信任被污染的共享 Gun 字段。
+     */
+    private static final Map<Item, Integer> BASE_MAX_AMMO = new HashMap<>();
 
     @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -46,68 +61,54 @@ public class GunStateHandler {
         }
         if (!tag.hasKey(AMMO_KEY)) return;
 
-        // 初始化 MaxAmmo NBT（给 CoreMod ASM 用）
-        if (!tag.hasKey("MaxAmmo")) {
-            tag.setInteger("MaxAmmo", getGunMaxAmmo(main));
-        }
+        int baseMaxAmmo = getBaseMaxAmmo(main);
 
         // ========== Phase.START: 在 CGM 运行前设置好 Gun.general.maxAmmo ==========
         if (event.phase == TickEvent.Phase.START) {
             int ocLevel = EnchantHelper.getLevel(main, ModEnchantments.OVER_CAPACITY);
-            if (ocLevel > 0 && tag.hasKey("oc_base")) {
+
+            if (ocLevel > 0) {
+                // 第一次拿到带 OC 的枪：记录 oc_base
+                if (!tag.hasKey("oc_base")) {
+                    tag.setInteger("oc_base", baseMaxAmmo);
+                }
                 int base = tag.getInteger("oc_base");
                 int boosted = base + (int)(base * 0.5 * ocLevel);
                 setGunMaxAmmo(main, boosted);
                 tag.setInteger("MaxAmmo", boosted);
-            } else if (tag.hasKey("oc_base")) {
-                // 非 OC 枪但 Gun 被改过 → 恢复
-                int base = tag.getInteger("oc_base");
-                setGunMaxAmmo(main, base);
-                tag.setInteger("MaxAmmo", base);
-                tag.removeTag("oc_base");
             } else {
-                // 普通枪：确保 Gun.general 是原始值
-                int curMax = getGunMaxAmmo(main);
-                if (curMax != tag.getInteger("MaxAmmo")) {
-                    setGunMaxAmmo(main, tag.getInteger("MaxAmmo"));
+                // 无 OC：恢复到缓存中的原始值（不信任共享 Gun 字段）
+                if (tag.hasKey("oc_base")) {
+                    tag.removeTag("oc_base");
                 }
+                setGunMaxAmmo(main, baseMaxAmmo);
+                tag.setInteger("MaxAmmo", baseMaxAmmo);
             }
             return;
         }
 
-        // ========== Phase.END: 超容量/弹药回收/熟练手逻辑 ==========
+        // ========== Phase.END: 弹药回收/熟练手逻辑 ==========
         if (event.phase != TickEvent.Phase.END) return;
 
-        // ==== 超容量 (Over Capacity) — 记录 oc_base ====
-        int ocLevel = EnchantHelper.getLevel(main, ModEnchantments.OVER_CAPACITY);
-        if (ocLevel > 0) {
-            if (!tag.hasKey("oc_base")) {
-                tag.setInteger("oc_base", getGunMaxAmmo(main));
-            }
-            // START phase 已经设好了 Gun.general，这里只处理弹药上限
-            int curAmmo = tag.getInteger(AMMO_KEY);
-            int boosted = tag.getInteger("MaxAmmo");
-            if (curAmmo > boosted) tag.setInteger(AMMO_KEY, boosted);
-        } else if (tag.hasKey("oc_base")) {
-            // START phase 已经恢复了
-        }
+        int curAmmo = tag.getInteger(AMMO_KEY);
+        int maxAmmo = tag.getInteger("MaxAmmo");
 
         // ==== 弹药回收 (Reclaimed) ====
         int rcLevel = EnchantHelper.getLevel(main, ModEnchantments.RECLAIMED);
         if (rcLevel > 0) {
-            int prev = tag.getInteger(PREV_AMMO_KEY);
-            int cur = tag.getInteger(AMMO_KEY);
-            if (prev > 0 && cur < prev) {
+            int prev = tag.hasKey(PREV_AMMO_KEY) ? tag.getInteger(PREV_AMMO_KEY) : curAmmo;
+            if (prev > curAmmo) {
                 float chance;
                 if (rcLevel == 1) chance = 1.0f / 3.0f;
                 else if (rcLevel == 2) chance = 0.5f;
                 else chance = 7.0f / 8.0f;
                 if (player.getRNG().nextFloat() < chance) {
-                    int maxAmmo = tag.getInteger("MaxAmmo");
-                    if (cur < maxAmmo) tag.setInteger(AMMO_KEY, Math.min(maxAmmo, cur + 1));
+                    if (curAmmo < maxAmmo) {
+                        tag.setInteger(AMMO_KEY, curAmmo + 1);
+                    }
                 }
             }
-            tag.setInteger(PREV_AMMO_KEY, cur);
+            tag.setInteger(PREV_AMMO_KEY, curAmmo);
         } else {
             tag.removeTag(PREV_AMMO_KEY);
         }
@@ -116,15 +117,14 @@ public class GunStateHandler {
         int qhLevel = EnchantHelper.getLevel(main, ModEnchantments.QUICK_HANDS);
         if (qhLevel > 0) {
             if (isReloading(player)) {
-                int cur = tag.getInteger(AMMO_KEY);
-                int max = tag.getInteger("MaxAmmo");
-                if (cur < max) {
+                if (curAmmo < maxAmmo) {
                     int interval = Math.max(1, 10 - qhLevel * 3);
-                    int lastTick = tag.getInteger(QH_TICK_KEY);
+                    int lastTick = tag.hasKey(QH_TICK_KEY) ? tag.getInteger(QH_TICK_KEY) : 0;
                     int now = player.ticksExisted;
-                    if (lastTick == 0) tag.setInteger(QH_TICK_KEY, now);
-                    else if (now - lastTick >= interval) {
-                        tag.setInteger(AMMO_KEY, Math.min(max, cur + 1));
+                    if (lastTick == 0) {
+                        tag.setInteger(QH_TICK_KEY, now);
+                    } else if (now - lastTick >= interval) {
+                        tag.setInteger(AMMO_KEY, Math.min(maxAmmo, curAmmo + 1));
                         tag.setInteger(QH_TICK_KEY, now);
                     }
                 }
@@ -150,14 +150,35 @@ public class GunStateHandler {
         return false;
     }
 
-    private int getGunMaxAmmo(ItemStack stack) {
+    /**
+     * 获取枪型的原始弹容量。首次调用时从共享 Gun 对象快照，之后走缓存。
+     * 这绕过了共享 Gun 字段被超容量附魔污染的问题。
+     */
+    private int getBaseMaxAmmo(ItemStack stack) {
+        Item item = stack.getItem();
+        Integer cached = BASE_MAX_AMMO.get(item);
+        if (cached != null) return cached;
+
+        // 首次快照：此时应该还没有被污染
+        int base = getGunMaxAmmoRaw(item);
+        BASE_MAX_AMMO.put(item, base);
+        return base;
+    }
+
+    /**
+     * 直接从共享 Gun 对象读取 maxAmmo（可能已被污染，仅用于首次快照）。
+     */
+    private int getGunMaxAmmoRaw(Item item) {
         try {
-            Object gun = stack.getItem().getClass().getMethod("getGun").invoke(stack.getItem());
+            Object gun = item.getClass().getMethod("getGun").invoke(item);
             Object general = gun.getClass().getField("general").get(gun);
             return general.getClass().getField("maxAmmo").getInt(general);
         } catch (Exception e) { return 30; }
     }
 
+    /**
+     * 写入共享 Gun 对象的 maxAmmo（只能通过这个入口修改，避免引入多个污染源）。
+     */
     private void setGunMaxAmmo(ItemStack stack, int value) {
         try {
             Object gun = stack.getItem().getClass().getMethod("getGun").invoke(stack.getItem());
