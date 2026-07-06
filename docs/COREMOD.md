@@ -153,7 +153,8 @@ This is not a hypothetical. It happened.
 
 That experience cemented a hard rule:
 
-> **The mod should depend on as little as possible.**
+> **A mod's dependencies should be as few and as simple as possible.**
+> Not just because it's easier to set up — but because when you pull one thread, the whole thing shouldn't unravel.
 
 CoreMod is the only approach that satisfies this rule:
 
@@ -358,7 +359,8 @@ SRP V1.10.7          寄生蜂 V1.3.4h1
 
 那次经历确立了一条铁律：
 
-> **模组应该尽可能不依赖任何东西。**
+> **模组的前置应该尽可能少而简练。**
+> 不只是为了好配置——更因为前置越少，越不容易牵一发而动全身。
 
 CoreMod 是唯一满足这条规则的方案：
 
