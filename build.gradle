@@ -1,0 +1,103 @@
+buildscript {
+    repositories {
+        maven { url = 'https://mirrors.cloud.tencent.com/maven/' }
+        maven { url = 'https://mirrors.cloud.tencent.com/gradle/' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+
+version = mod_version
+group = maven_group
+archivesBaseName = mod_id
+
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+minecraft {
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            property 'fml.coreMods.load', core_plugin_path
+
+            mods {
+                cgmenchant {
+                    source sourceSets.main
+                }
+            }
+        }
+        server {
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            property 'fml.coreMods.load', core_plugin_path
+
+            mods {
+                cgmenchant {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    maven { url = 'https://mirrors.cloud.tencent.com/maven/' }
+    maven { url = 'https://maven.minecraftforge.net/' }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
+}
+
+jar {
+    dependsOn compileJava
+    manifest {
+        attributes(
+            'FMLCorePlugin': core_plugin_path,
+            'FMLCorePluginContainsFMLMod': 'true',
+            'ForceLoadAsMod': 'true'
+        )
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", "1.12.2"
+
+    from(sourceSets.main.resources.srcDirs) {
+        include "mcmod.info"
+        expand "version": project.version, "mcversion": "1.12.2"
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude "mcmod.info"
+    }
+}
+
+// 强制所有资源文件使用 UTF-8（中文 Windows 默认为 GBK）
+tasks.withType(ProcessResources) {
+    filesMatching("**/*.lang") {
+        filteringCharset = 'UTF-8'
+    }
+    filesMatching("mcmod.info") {
+        filteringCharset = 'UTF-8'
+    }
+}
+
+clean {
+    delete "$projectDir/.cache"
+    delete "$projectDir/run"
+}
