@@ -1,4 +1,174 @@
-# CoreMod 架构原理
+# CoreMod Architecture
+
+> For developers and reviewers: why the CoreMod exists, what it does, and how the modules work together.
+
+## 1. Why CoreMod?
+
+CGM v0.15.3 left two gaps that forced us down to bytecode:
+
+| Gap | CGM behavior | Why events/reflection can't fix it | Affected enchantments |
+|-----|-------------|-----------------------------------|----------------------|
+| `ItemGun` doesn't override `getItemEnchantability()` | Inherits `Item`, returns 0 | Reflection cannot **add a method** to a class at load time. Forge has no "add method to Item" event. | **All 11 enchantments** |
+| `ReloadTracker.isWeaponFull()` reads static fields | Reads `Gun.general.maxAmmo` directly | We can reflectively write `Gun.general.maxAmmo`, but `isWeaponFull()`'s `this.gun` may reference a **different Gun instance** | **Over Capacity** |
+
+Both gaps are baked in at class-load time. Java reflection cannot retroactively add methods or alter bytecode inside existing methods → the only option is to intercept before class loading → CoreMod.
+
+## 2. The Two Patches
+
+### 2.1 Patch A: `getItemEnchantability()` on ItemGun
+
+```
+CGM original:                   After our injection:
+┌─────────────────────────┐    ┌─────────────────────────┐
+│ class ItemGun           │    │ class ItemGun           │
+│   extends Item          │    │   extends Item          │
+│                         │    │                         │
+│   fire(...)             │    │   fire(...)             │
+│   reload(...)           │    │   reload(...)           │
+│   (no enchantability)   │    │                         │
+│                         │    │ + getItemEnchantability()│
+│                         │    │     return 30;          │
+└─────────────────────────┘    └─────────────────────────┘
+
+Enchanting Table logic:
+  if (item.getItemEnchantability() > 0) → can enchant
+  if (item.getItemEnchantability() == 0) → cannot enchant  ← CGM falls here
+```
+
+**Why 30?** Iron-tier enchantability. Guns are primary weapons — should not be as generous as gold (22), nor as stingy as diamond (10).
+
+### 2.2 Patch B: Max-ammo read path in `isWeaponFull()`
+
+Two modules working in precise coordination:
+
+```
+                     ┌─ CGM's original data flow (severed by CoreMod) ──┐
+                     │                                                   │
+   Gun JSON config ─→ Gun.serverGun.general.maxAmmo (= 30)              │
+                                                ↑                        │
+                                   isWeaponFull() reads this             │ ← always static
+                                                                          │
+                     └───────────────────────────────────────────────────┘
+
+                     ┌─ Our replacement data flow ─────────────────────────┐
+                     │                                                     │
+   GunStateHandler (PlayerTickEvent START)                                 │
+     │                                                                     │
+     ├─ Reflection: read Gun.general.maxAmmo                              │
+     ├─ Compute: boosted = base * (1 + 0.5 * ocLevel)                     │
+     ├─ Reflection: write Gun.general.maxAmmo = boosted                   │
+     └─ NBT: write tag["MaxAmmo"] = boosted                               │
+                              │                                             │
+                              ▼                                             │
+                     isWeaponFull() [after CoreMod patch]                  │
+                        reads tag["MaxAmmo"]  ← dynamic NBT value          │
+                              │                                             │
+                              ▼                                             │
+                     Return: ammo >= boosted ? stop : keep reloading       │
+                     └─────────────────────────────────────────────────────┘
+```
+
+**Key insight:** The CoreMod doesn't change the Gun object's value — it changes **where** `isWeaponFull()` reads from (field chain → NBT tag). This lets GunStateHandler control max-ammo entirely through the NBT system.
+
+### 2.3 Why both reflection AND NBT?
+
+Two paths, each serving different CGM consumers:
+
+| Data path | Who reads it | Why it's needed |
+|-----------|-------------|-----------------|
+| `Gun.general.maxAmmo` (reflection) | CGM's own `fire()`, HUD display | CGM's internal code doesn't read NBT "MaxAmmo" — it reads Gun object fields |
+| `tag["MaxAmmo"]` (NBT) | `isWeaponFull()` (after CoreMod patch) | This is the path we control precisely, unaffected by `this.gun` instance differences |
+
+Both paths are synced to the same value — seemingly redundant, but each serves different code paths inside CGM.
+
+## 3. Module Collaboration
+
+```
+Startup (class-loading phase):
+  FML
+   ├─ loads GunTransformer (IFMLLoadingPlugin)
+   │    └─ registers GunClassTransformer
+   │         ├─ intercepts ItemGun → injects getItemEnchantability()
+   │         └─ intercepts ReloadTracker → patches isWeaponFull()
+   │
+   └─ loads CGMEnchantmentMod (@Mod)
+         └─ preInit: registers 8 event handlers
+
+Runtime (game tick loop):
+  PlayerTickEvent.START
+   └─ GunStateHandler.onPlayerTick()
+        ├─ initializes tag["MaxAmmo"] from Gun config
+        ├─ Over Capacity: reflect-write Gun + write NBT
+        └─ → next isWeaponFull() call reads NBT value
+
+  PlayerTickEvent.END
+   └─ GunStateHandler.onPlayerTick()
+        ├─ Reclaimed: detects ammo consumption → chance-based refund
+        └─ Quick Hands: detects reload state → accelerated loading
+```
+
+## 4. Risk Assessment
+
+| Scenario | Likelihood | Impact |
+|----------|-----------|--------|
+| Another mod also modifies CGM internals | Low but real | Bytecode collision at class load → crash |
+| CGM update moves ItemGun to a different package | Medium | Transformer can't find target class → enchantments disabled (no crash) |
+| CGM update changes `isWeaponFull()` internals | Medium | Bytecode match fails → Over Capacity stops working (no crash) |
+| MCP mapping version changes SRG names | Low | `func_74762_e` no longer maps to `getInteger` → NoSuchMethodError |
+
+### Why CoreMod instead of alternatives?
+
+The decision traces back to a real-world dependency catastrophe. Another modding project required **three** separate pre-installed mods just to function — each with its own strict version requirement — and the result was a chain reaction of version conflicts where the mods either failed to detect each other or actively rejected one another. That experience cemented a hard rule:
+
+> **The mod should depend on as little as possible.**
+
+CoreMod is the only approach that satisfies this rule:
+
+1. **Zero extra dependencies**: Our runtime dependency list is exactly two items — CGM and Obfuscate (the latter only because CGM itself requires it). No additional libraries, no patching frameworks. Every added dependency is another point of failure in the user's mods folder.
+2. **Only two injection points**: Both are narrow — one is a method addition, the other a read-path replacement. Neither rewrites core logic. Small surface area means small blast radius.
+3. **Fully self-contained**: All bytecode manipulation lives in `GunClassTransformer.java`, written in plain ASM against `org.objectweb.asm` (which ships inside Minecraft itself). No external tooling needed at build time or runtime.
+4. **No transitive dependency risk**: Since we own the ASM code directly, there is no chain of third-party libraries each demanding their own specific versions. What compiles today will compile tomorrow.
+
+## 5. License & Dependencies
+
+### Our License
+
+This mod is released under **GNU General Public License v3.0 (GPL-3.0)**.
+
+- All 17 Java source files carry GPL-3.0 license headers
+- Full license text: `LICENSE` in the project root
+
+### Runtime Dependency Licensing
+
+| Dependency | Loading | Bundled in this mod? | Notes |
+|-----------|---------|---------------------|-------|
+| **CGM** | `required-after` — installed by user | No | © MrCrayfish. We declare a runtime dependency only; no CGM code is included or redistributed. |
+| **Obfuscate** | Loaded automatically by CGM | No | MrCrayfish's proprietary library. This mod makes zero direct Obfuscate API calls. |
+
+**Important:**
+
+1. This mod does **not** include, modify, or redistribute any CGM or Obfuscate code. Users must obtain both mods from official sources (e.g. CurseForge).
+2. GPL-3.0 copyleft applies to combined works distributed together. This mod interacts with CGM at runtime via Forge's mod-loading mechanism — this does not constitute a "combined work" under the GPL.
+3. CoreMod bytecode injection happens at class-load time as **runtime adaptation**, not code merging. All injection logic is implemented in our own GPL-3.0 code.
+4. When publishing on CurseForge / Modrinth:
+   - Do not bundle CGM or Obfuscate JARs in your release
+   - Clearly list CGM as a required dependency
+   - Note that Obfuscate is required by CGM (covered by CGM's own installation instructions)
+
+## 6. File Index
+
+| File | Role |
+|------|------|
+| `core/GunTransformer.java` | FMLCorePlugin entry point, registers the transformer with FML |
+| `core/GunClassTransformer.java` | ASM bytecode transformer, performs both patches |
+| `handler/GunStateHandler.java` | Runtime event handler, maintains ammo state via reflection + NBT |
+| `handler/EnchantHelper.java` | Utility for enchantment level queries |
+| `enchant/ModEnchantments.java` | Registry for all 11 enchantments |
+| `CGMEnchantmentMod.java` | @Mod main class, registers all event handlers |
+
+---
+
+# CoreMod 架构原理（中文）
 
 > 本文档面向本模组的开发者和代码审查者，解释 CoreMod 为什么必须存在、做了什么事、以及如何与其他模块协作。
 
@@ -118,44 +288,20 @@ CGM 原始类:                    本模组注入后:
 | CGM 更新后 isWeaponFull() 的内部字段链改变 | 中等 | bytecode 匹配失败，不影响其他功能但不改弹容量 |
 | MCP 映射版本变化导致 SRG 名改变 | 低 | func_74762_e 不再对应 getInteger，报 NoSuchMethodError |
 
-### 为什么在上述风险下仍然选择 CoreMod 而非 Mixin？
+### 为什么在上述风险下仍然选择 CoreMod？
 
-1. **1.12.2 Forge 生态现实**：Mixin 在此版本需要额外安装 MixinBootstrap 模组。每多一个前置，用户安装失败的概率就翻倍。
-2. **CGM 本身也不用 Mixin**：如果 CGM 自己用了 Mixin，我们跟随用 Mixin 是自然的；但 CGM 不用，再引入 Mixin 显得过度设计。
-3. **修改点极少**：只有两处，且都是"追加"或"替换读取路径"，不是"重写核心逻辑"。字节码注入的杀伤半径很小。
+这个决定的根源来自一次真实的前置灾难。另一个模组项目需要**三个**独立前置模组才能运行——每个都有自己严格的版本要求——结果就是一连串的版本冲突：模组之间要么互相检测不到，要么直接互相排斥。那次经历确立了一条铁律：
 
-### 未来方向
+> **模组应该尽可能不依赖任何东西。**
 
-如果 CGM 后续版本（比如 1.16+ 的 CGM 重写版）引入了 Mixin 或有官方附魔 API，本 CoreMod 应该在第一时间退役，迁移到官方扩展点。
+CoreMod 是唯一满足这条规则的方案：
 
-## 5. 许可证与依赖说明
+1. **零额外前置**：本模组的运行时依赖只有两项——CGM 和 Obfuscate（后者仅因 CGM 本身需要）。没有额外的库，没有补丁框架。每多一个前置，就是用户 mods 文件夹里多一个潜在的爆炸点。
+2. **修改点极少**：只有两处，且都是"追加"或"替换读取路径"，不是"重写核心逻辑"。接触面越小，出事的概率越小。
+3. **完全自包含**：所有字节码操作用纯 ASM（`org.objectweb.asm`，Minecraft 自带）手写实现。不需要任何外部工具。
+4. **零传递依赖风险**：因为 ASM 代码是我们自己写的，不存在"第三方库 A 要版本 X、库 B 要版本 Y"的传递依赖冲突。今天能编译的，明天照样能编译。
 
-### 本模组的许可证
-
-本模组（CGM Enchantment Addon）以 **GNU General Public License v3.0 (GPL-3.0)** 发布。
-
-- 所有 Java 源文件顶部均包含 GPL-3.0 版权声明头
-- 完整的许可证文本见项目根目录 `LICENSE` 文件
-- 您可以自由使用、修改和重新分发本模组，但衍生作品也必须以 GPL-3.0 兼容的许可证发布
-
-### 运行时依赖的许可兼容性
-
-| 依赖 | 加载方式 | 是否包含在本模组中 | 许可说明 |
-|------|---------|-------------------|---------|
-| **CGM** (MrCrayfish's Gun Mod) | `required-after` — 用户自行安装 | 否 | MrCrayfish 版权所有。本模组仅声明运行时依赖，不包含或分发 CGM 的任何代码 |
-| **Obfuscate** | CGM 的附属库，由 CGM 自动加载 | 否 | MrCrayfish 的闭源库。本模组不直接调用 Obfuscate API，依赖关系通过 CGM 间接传递 |
-
-**重要说明：**
-
-1. 本模组不包含、不修改、不重新分发 CGM 或 Obfuscate 的任何代码。用户必须从 CGM 官方渠道（如 CurseForge）单独下载安装这两个模组。
-2. GPL-3.0 的"传染性"仅适用于将 GPL 代码与其他代码**合并为一个程序**后分发的情况。本模组通过 Forge 的模组加载机制在运行时与 CGM 交互，不构成 GPL 意义上的"组合作品"。
-3. CoreMod 字节码注入发生在类加载阶段，是对 CGM 类的**运行时适配**而非**代码合并**。注入逻辑完全由本模组的 GPL-3.0 代码实现。
-4. 如果您计划在 CurseForge / Modrinth 等平台发布本模组，请确保：
-   - 不将 CGM 或 Obfuscate 的 JAR 文件包含在您的发布包中
-   - 在模组页面明确列出 CGM 为必需前置
-   - 在模组页面说明 Obfuscate 是 CGM 的前置（由 CGM 的安装说明覆盖）
-
-## 6. 文件索引
+## 5. 文件索引
 
 | 文件 | 角色 |
 |------|------|
@@ -168,4 +314,4 @@ CGM 原始类:                    本模组注入后:
 
 ---
 
-*最后更新: 2026-07-07 · 适用于 CGM v0.15.3 + Forge 1.12.2-14.23.5.2859*
+*Last updated: 2026-07-07 · CGM v0.15.3 + Forge 1.12.2-14.23.5.2859*
