@@ -52,12 +52,12 @@ Two modules working in precise coordination:
 
                      ┌─ Our replacement data flow ─────────────────────────┐
                      │                                                     │
-   GunStateHandler (PlayerTickEvent START)                                 │
-     │                                                                     │
-     ├─ Reflection: read Gun.general.maxAmmo                              │
-     ├─ Compute: boosted = base * (1 + 0.5 * ocLevel)                     │
-     ├─ Reflection: write Gun.general.maxAmmo = boosted                   │
-     └─ NBT: write tag["MaxAmmo"] = boosted                               │
+                      GunStateHandler (PlayerTickEvent START)              │
+                     │                                                    │
+                        ├─ Reflection: read Gun.general.maxAmmo            │
+                      ├─ Compute: boosted = base * (1 + 0.5 * ocLevel)       │
+                      ├─ Reflection: write Gun.general.maxAmmo = boosted   │
+                          └─ NBT: write tag["MaxAmmo"] = boosted           │
                               │                                             │
                               ▼                                             │
                      isWeaponFull() [after CoreMod patch]                  │
@@ -199,7 +199,7 @@ This mod is released under **GNU General Public License v3.0 (GPL-3.0)**.
 | `enchant/ModEnchantments.java` | Registry for all 11 enchantments |
 | `CGMEnchantmentMod.java` | @Mod main class, registers all event handlers |
 
----
+
 
 # CoreMod 架构原理（中文）
 
