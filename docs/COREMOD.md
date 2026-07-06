@@ -255,12 +255,12 @@ CGM 原始类:                    本模组注入后:
 
                      ┌─ 本模组的替换数据流 ─────────────────────┐
                      │                                          │
-   GunStateHandler (PlayerTickEvent START)                      │
-     │                                                          │
-     ├─ 反射: 读 Gun.general.maxAmmo                            │
-     ├─ 计算: boosted = base * (1 + 0.5 * ocLevel)              │
-     ├─ 反射: 写 Gun.general.maxAmmo = boosted                  │
-     └─ NBT:  写 tag["MaxAmmo"] = boosted                       │
+                      GunStateHandler (PlayerTickEvent START)    │
+                     │                                         │
+                        ├─ 反射: 读 Gun.general.maxAmmo          │
+                      ├─ 计算: boosted = base * (1 + 0.5 * ocLevel) │
+                      ├─ 反射: 写 Gun.general.maxAmmo = boosted  │
+                          └─ NBT:  写 tag["MaxAmmo"] = boosted   │
                               │                                  │
                               ▼                                  │
                      isWeaponFull() [CoreMod 替换后]             │
