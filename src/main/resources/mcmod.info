@@ -2,13 +2,13 @@
   {
     "modid": "cgmenchant",
     "name": "MrCrayfish's Gun: Enchantment Compat",
-    "description": "深度求索的弹道随想 — 为 CGM/OnysdGuns 添加 11 种枪械附魔。",
+    "description": "为 MrCrayfish's Gun Mod (CGM) 添加 11 种枪械专属附魔：加速器、穿甲弹、间接伤害、纵火狂、弧光引导、高爆弹、轻装上阵、快速扳机、熟练手、超容量、弹药回收。",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "",
     "updateUrl": "",
-    "authorList": [],
-    "credits": "",
+    "authorList": ["CGM Enchantment Addon Team"],
+    "credits": "MrCrayfish — CGM original author; Forge modding community",
     "logoFile": "",
     "screenshots": [],
     "dependencies": ["cgm"]
