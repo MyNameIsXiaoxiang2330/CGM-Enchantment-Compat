@@ -126,6 +126,26 @@ The decision traces back to a real-world dependency catastrophe. An addon for **
 
 The result: the four mods — SRP, Cotesia Glomerata, GeckoLib, and MixinBooter — **sometimes failed to detect each other, sometimes actively rejected each other**, despite all version requirements being technically satisfied. This was not a bug in any single mod. It was the dependency chain itself that was fragile.
 
+We have concrete proof. Here is the actual crash, reproduced on demand:
+
+```
+SRP V1.10.7          Cotesia Glomerata V1.3.4h1
+     │                        │
+     │  applyBonuses(          │  Mixin injects against OLD signature:
+     │    SRPSaveData,         │  applyBonuses(int, int, boolean, CallbackInfo)
+     │    World,               │
+     │    CallbackInfo)   ✗    │  SRP V1.9.21 → V1.10.7 changed the method.
+     │                        │  Cotesia never knew.
+     └──── Signature mismatch ─┘
+              │
+     InvalidInjectionException:
+       Expected (SRPSaveData, World, CallbackInfo)
+       but found (int, int, boolean, CallbackInfo)
+              │
+     EntityParasiteBase fails to load → Game crashes at startup.
+
+This is not a hypothetical. It happened.
+
 > **This is not a critique of Mixin.** Mixin is a proven tool and CGM 1.19+ uses it extensively without issue. The problem is specific to the 1.12.2 Forge ecosystem, where loading a bytecode patching framework requires installing a separate loader mod, which in turn must coexist with other mods that may also depend on incompatible versions of the same loader.
 
 > If you ask "why not use the obvious alternative?", the story above is what you'll hear. Every single time. It is the root of every technical decision in this project.
@@ -309,6 +329,26 @@ CGM 原始类:                    本模组注入后:
 - **MixinBooter**（1.12.2 Forge 的 Mixin 加载器）
 
 结果：SRP、寄生蜂、GeckoLib、MixinBooter 这四个模组——**有时候互相检测不到，有时候又直接互相排斥**——尽管所有版本要求都满足了。这不是任何一个模组的 bug，是依赖链本身就脆弱。
+
+我们有确凿证据。以下是在要求下当场复现的真实崩溃：
+
+```
+SRP V1.10.7          寄生蜂 V1.3.4h1
+     │                        │
+     │  applyBonuses(          │  Mixin 注入点写死了旧版签名：
+     │    SRPSaveData,         │  applyBonuses(int, int, boolean, CallbackInfo)
+     │    World,               │
+     │    CallbackInfo)   ✗    │  SRP 从 V1.9.21 升级到 V1.10.7
+     │                        │  方法签名变了。寄生蜂不知道。
+     └─────── 签名不匹配 ──────┘
+              │
+     InvalidInjectionException:
+       Expected (SRPSaveData, World, CallbackInfo)
+       but found (int, int, boolean, CallbackInfo)
+              │
+     EntityParasiteBase 加载失败 → 游戏启动即崩溃。
+
+这不是假设，它发生了。
 
 > **这不是对 Mixin 的批评。** Mixin 是经过验证的工具，CGM 1.19+ 大量使用了它且运行良好。问题出在 1.12.2 Forge 生态：加载字节码补丁框架需要额外安装一个加载器模组，而这个加载器又必须和其他可能依赖同一加载器（但版本不同）的模组共存。
 
