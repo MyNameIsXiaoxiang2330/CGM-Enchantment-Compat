@@ -25,8 +25,8 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
 | **Accelerator** | II | Bullet speed +15%/lvl, damage +10%/lvl |
-| **Puncturing** | IV | Ignores 25% of target armor per level |
-| **Collateral** | III | Bullets pierce through multiple targets with firework particle trail |
+| **Puncturing**\* | IV | Ignores 25% of target armor per level (differs from official CGM) |
+| **Collateral**\* | III | Bullets pierce through multiple targets with firework particle trail (enhanced) |
 | **Fire Starter** | I | Spawns fire on bullet impact; explosions spread flames |
 | **Arc Light** | III | Visual lightning strike; charges creepers; deals magic damage |
 | **High Explosive** | V | Rocket ammo causes large explosions; regular bullets cause small ones |
@@ -44,6 +44,8 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 | **FELLBULLET Piercer** (贯霰形) | IV | On kill: 3D ring behind target converges, then cone scatter along trajectory + piercing |
 
 > **Note:** Enchanting Table does not support guns directly. Use an **Anvil + Enchanted Book** to apply enchantments.
+>
+> \* = differs from official CGM v1.0.1+. See [`docs/COMPARISON.md`](docs/COMPARISON.md) for details.
 
 ## Dependencies
 
@@ -121,8 +123,8 @@ Requirements:
 | 附魔 | 最大等级 | 效果 |
 |------|---------|------|
 | 加速器 | II | 弹速 +15%/级，伤害 +10%/级 |
-| 穿甲弹 | IV | 忽视目标护甲 25%/级 |
-| 间接伤害 | III | 子弹穿透多目标，附带白色烟花粒子弹道 |
+| 穿甲弹\* | IV | 忽视目标护甲 25%/级（与官方 CGM 机制不同） |
+| 间接伤害\* | III | 子弹穿透多目标，附带白色烟花粒子弹道（增强版） |
 | 纵火者 | I | 子弹消失时生成火焰，爆炸扩散火焰 |
 | 弧光引导 | III | 视觉闪电，充能苦力怕，魔法伤害 |
 | 高爆弹 | V | 火箭弹药大爆炸，普通子弹小范围爆炸 |
@@ -140,6 +142,8 @@ Requirements:
 | **凶弹-贯霰形** (FELLBULLET Piercer) | IV | 击杀时目标背后生成 3D 红环，收缩后沿弹道锥形散射 + 贯穿 |
 
 > 附魔台无法直接附魔枪械，请使用「**铁砧 + 附魔书**」组合。
+>
+> \* = 与官方 CGM v1.0.1+ 机制不同。详见 [`docs/COMPARISON.md`](docs/COMPARISON.md)。
 
 ## 安装
 
