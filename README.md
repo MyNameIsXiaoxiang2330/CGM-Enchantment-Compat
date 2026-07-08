@@ -14,29 +14,46 @@ _[English](#english) | [中文](#中文)_
 
 Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-gun-mod) (CGM) v0.15.3 on Minecraft 1.12.2, plus original enchantments inspired by *Limbus Company* EGO.
 
+> **Current build:** `0.0.7.009` (Dev) — versions 0.0.7.000~009 are development builds.
+>
 > **Note:** CGM v0.15.3 (1.12.2) does not expose `getItemEnchantability()` on `ItemGun`, nor does it provide a hook for dynamic max-ammo in the reload system. This mod works around both limitations with a minimal CoreMod. See [`docs/COREMOD.md`](docs/COREMOD.md) for the technical details.
 
 ---
 
 ## Enchantments
 
-### Standard (11)
+### Standard — CGM official (8)
 
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
 | **Accelerator** | II | Bullet speed +15%/lvl, damage +10%/lvl |
-| **Puncturing**\* | IV | Ignores 25% of target armor per level (differs from official CGM) |
-| **Collateral**\* | III | Bullets pierce through multiple targets with firework particle trail (enhanced) |
-| **Fire Starter** | I | Spawns fire on bullet impact; explosions spread flames |
-| **Arc Light** | III | Visual lightning strike; charges creepers; deals magic damage |
-| **High Explosive** | V | Rocket ammo causes large explosions; regular bullets cause small ones |
-| **Lightweight** | I | +20% movement speed while aiming; reduced spread |
-| **Over Capacity** | III | Magazine capacity +50% per level (per-gun, persistent) |
-| **Quick Hands** | II | Reload interval reduced by 3 ticks per level |
-| **Reclaimed** | III | 33% / 50% / 87.5% chance to refund spent ammo |
-| **Trigger Finger** | I~III | ⚠️ Disabled — incompatible with CGM v0.15.3 cooldown system |
+| **Puncturing**\* | IV | Ignores 25% armor per level |
+| **Collateral**\* | III | Bullets pierce through targets (firework trail) |
+| **Fire Starter** | I | Ignites targets; explosions spread fire |
+| **Lightweight** | I | +20% move speed while aiming, reduced spread |
+| **Over Capacity** | III | Magazine +50% capacity per level (per-gun) |
+| **Quick Hands** | II | Reload interval -3 ticks per level |
+| **Reclaimed** | III | 33% / 50% / 87.5% chance to refund ammo |
+
+### Original (2)
+
+| Enchantment | Max Level | Effect |
+|-------------|-----------|--------|
+| **Arc Light** | III | Lightning strike on hit/explosion, bonus magic damage, charges creepers |
+| **High Explosive** | V | Explosion AoE scales with weapon type (rocket/grenade/shotgun/bullet) |
 
 ### Recreated — *Limbus Company* EGO (2)
+
+| Enchantment | Max Level | Effect |
+|-------------|-----------|--------|
+| **FELLBULLET** (地霰形) | IV | On kill: crosshair circles on ground converge, then 360° scatter |
+| **FELLBULLET Piercer** (贯霰形) | IV | On kill: 3D ring behind target converges, then cone scatter + piercing |
+
+### WIP — Not yet implemented (1)
+
+| Enchantment | Max Level | Reason |
+|-------------|-----------|--------|
+| **Trigger Finger** | I~III | CGM v0.15.3 cooldown system is hardcoded and cannot be intercepted |
 
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
@@ -73,7 +90,7 @@ This mod uses a **minimal CoreMod** (FMLCorePlugin + ASM) to inject two capabili
 | `getItemEnchantability()` | `ItemGun` | Allows guns to accept enchantments (returns 30, iron-tier) |
 | `isWeaponFull()` patch | `ReloadTracker` | Reads max ammo from NBT instead of static config, enabling dynamic capacity |
 
-All 13 enchantment effects are implemented as standard `@SubscribeEvent` handlers — no other bytecode modifications.
+All 12 available enchantments + 1 WIP are implemented as standard `@SubscribeEvent` handlers — no other bytecode modifications.
 
 For a deep dive, see [`docs/COREMOD.md`](docs/COREMOD.md).
 
@@ -93,8 +110,6 @@ Requirements:
 ## Known Issues
 
 - **Enchanting Table** cannot enchant guns — use Anvil + Enchanted Book instead
-- **Trigger Finger** is disabled: CGM v0.15.3 uses a hardcoded cooldown system
-- **Quick Hands** modifies NBT directly during reload, may cause visual glitches
 - **Reclaimed** also triggers on ammo unload (work in progress)
 - **CoreMod** may conflict with other mods that also modify CGM internals
 
@@ -114,25 +129,31 @@ Requirements:
 
 为 [MrCrayfish's Gun Mod](https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-gun-mod) (CGM) v0.15.3 (Minecraft 1.12.2) 还原高版本枪械附魔，并包含受 *边狱公司 (Limbus Company)* EGO 启发的原创附魔。
 
+> **当前版本:** `0.0.7.009` (Dev) — 0.0.7.000~009 均为开发版。
+
 ---
 
 ## 附魔列表
 
-### 标准附魔（11 个）
+### 标准附魔 — CGM 官方（8 个）
 
 | 附魔 | 最大等级 | 效果 |
 |------|---------|------|
 | 加速器 | II | 弹速 +15%/级，伤害 +10%/级 |
-| 穿甲弹\* | IV | 忽视目标护甲 25%/级（与官方 CGM 机制不同） |
-| 间接伤害\* | III | 子弹穿透多目标，附带白色烟花粒子弹道（增强版） |
-| 纵火者 | I | 子弹消失时生成火焰，爆炸扩散火焰 |
-| 弧光引导 | III | 视觉闪电，充能苦力怕，魔法伤害 |
-| 高爆弹 | V | 火箭弹药大爆炸，普通子弹小范围爆炸 |
-| 轻装上阵 | I | 开镜时移速 +20%，散布减小 |
-| 超容量 | III | 弹匣容量 +50%/级，每把枪独立计算 |
-| 熟练手 | II | 装弹间隔减少 3 tick/级 |
-| 弹药回收 | III | 消耗弹药时 33%/50%/87.5% 概率返还 |
-| 快速扳机 | I~III | ⚠️ 已禁用（与 CGM v0.15.3 冷却系统冲突） |
+| 穿甲弹\* | IV | 忽视目标护甲 25%/级 |
+| 间接伤害\* | III | 子弹穿透多目标，附带白色烟花弹道 |
+| 纵火者 | I | 点燃目标，爆炸扩散火焰 |
+| 轻装上阵 | I | 开镜移速 +20%，散布减小 |
+| 超容量 | III | 弹匣容量 +50%/级 |
+| 熟练手 | II | 装弹间隔 -3 tick/级 |
+| 弹药回收 | III | 33%/50%/87.5% 概率返还 |
+
+### 原创附魔（2 个）
+
+| 附魔 | 最大等级 | 效果 |
+|------|---------|------|
+| 弧光引导 | III | 命中/爆炸时召唤闪电 + 魔法伤害，充能苦力怕 |
+| 高爆弹 | V | 爆炸范围/伤害随武器类型变化（火箭/榴弹/霰弹/普通）|
 
 ### EGO 还原附魔（2 个）— 基于边狱公司
 
@@ -140,6 +161,12 @@ Requirements:
 |------|---------|------|
 | **凶弹-地霰形** (FELLBULLET) | IV | 击杀时地面生成准星同心圈，收缩后 360° 逐波散射 |
 | **凶弹-贯霰形** (FELLBULLET Piercer) | IV | 击杀时目标背后生成 3D 红环，收缩后沿弹道锥形散射 + 贯穿 |
+
+### WIP — 未实现（1 个）
+
+| 附魔 | 最大等级 | 原因 |
+|------|---------|------|
+| 快速扳机 | I~III | CGM v0.15.3 冷却系统硬编码，无法拦截 |
 
 > 附魔台无法直接附魔枪械，请使用「**铁砧 + 附魔书**」组合。
 >
@@ -154,7 +181,7 @@ Requirements:
 
 ## 技术架构
 
-最小 CoreMod（FMLCorePlugin + ASM）注入两处能力；全部 13 个附魔效果由 @SubscribeEvent 事件驱动实现。
+最小 CoreMod（FMLCorePlugin + ASM）注入两处能力；全部 12 个可用附魔 + 1 个 WIP 效果由 @SubscribeEvent 事件驱动实现。
 
 详见 [`docs/COREMOD.md`](docs/COREMOD.md)、[`docs/COMPARISON.md`](docs/COMPARISON.md)（附魔差异详解）和 [`docs/TECHNICAL_ISSUES.md`](docs/TECHNICAL_ISSUES.md)。
 
