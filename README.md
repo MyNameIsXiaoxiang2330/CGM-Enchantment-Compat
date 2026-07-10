@@ -34,6 +34,7 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 | **Over Capacity** | III | Magazine +50% capacity per level (per-gun) |
 | **Quick Hands** | II | Reload interval -3 ticks per level |
 | **Thrifty** (勤俭节约) | III | 33% / 50% / 87.5% chance to refund ammo on hit |
+| **Trigger Finger** | III | -4 tick cooldown per level, min 1 tick |
 
 ### Original (2)
 
@@ -48,12 +49,6 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 |-------------|-----------|--------|
 | **FELLBULLET** (地霰形) | IV | On kill: crosshair circles on ground converge, then 360° scatter |
 | **FELLBULLET Piercer** (贯霰形) | IV | On kill: 3D ring behind target converges, then cone scatter + piercing |
-
-### WIP — Not yet implemented (1)
-
-| Enchantment | Max Level | Reason |
-|-------------|-----------|--------|
-| **Trigger Finger** (WIP) | I~III | CGM v0.15.3 cooldown system is hardcoded and cannot be intercepted |
 
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
@@ -90,7 +85,7 @@ This mod uses a **minimal CoreMod** (FMLCorePlugin + ASM) to inject two capabili
 | `getItemEnchantability()` | `ItemGun` | Allows guns to accept enchantments (returns 30, iron-tier) |
 | `isWeaponFull()` patch | `ReloadTracker` | Reads max ammo from NBT instead of static config, enabling dynamic capacity |
 
-All 12 available enchantments + 1 WIP are implemented as standard `@SubscribeEvent` handlers — no other bytecode modifications.
+All 14 enchantment effects are implemented as standard `@SubscribeEvent` handlers — no other bytecode modifications.
 
 For a deep dive, see [`docs/COREMOD.md`](docs/COREMOD.md).
 
@@ -110,7 +105,6 @@ Requirements:
 ## Known Issues
 
 - **Enchanting Table** cannot enchant guns — use Anvil + Enchanted Book instead
-- **Reclaimed** also triggers on ammo unload (work in progress)
 - **CoreMod** may conflict with other mods that also modify CGM internals
 
 ## License
@@ -135,7 +129,7 @@ Requirements:
 
 ## 附魔列表
 
-### 标准附魔 — CGM 官方（8 个）
+### 标准附魔 — CGM 官方（9 个）
 
 | 附魔 | 最大等级 | 效果 |
 |------|---------|------|
@@ -147,6 +141,7 @@ Requirements:
 | 超容量 | III | 弹匣容量 +50%/级 |
 | 熟练手 | II | 装弹间隔 -3 tick/级 |
 | 勤俭节约 | III | 命中目标后 33%/50%/87.5% 概率返还弹药 |
+| 快速扳机 | III | 每级减4 tick射速，最低1 tick |
 
 ### 原创附魔（2 个）
 
@@ -162,12 +157,6 @@ Requirements:
 | **凶弹-地霰形** (FELLBULLET) | IV | 击杀时地面生成准星同心圈，收缩后 360° 逐波散射 |
 | **凶弹-贯霰形** (FELLBULLET Piercer) | IV | 击杀时目标背后生成 3D 红环，收缩后沿弹道锥形散射 + 贯穿 |
 
-### WIP — 未实现（1 个）
-
-| 附魔 | 最大等级 | 原因 |
-|------|---------|------|
-| 快速扳机 (未实现) | I~III | CGM v0.15.3 冷却系统硬编码，无法拦截 |
-
 > 附魔台无法直接附魔枪械，请使用「**铁砧 + 附魔书**」组合。
 >
 > \* = 与官方 CGM v1.0.1+ 机制不同。详见 [`docs/COMPARISON.md`](docs/COMPARISON.md)。
@@ -181,7 +170,7 @@ Requirements:
 
 ## 技术架构
 
-最小 CoreMod（FMLCorePlugin + ASM）注入两处能力；全部 12 个可用附魔 + 1 个 WIP 效果由 @SubscribeEvent 事件驱动实现。
+最小 CoreMod（FMLCorePlugin + ASM）注入两处能力；全部 14 个附魔效果由 @SubscribeEvent 事件驱动实现。
 
 详见 [`docs/COREMOD.md`](docs/COREMOD.md)、[`docs/COMPARISON.md`](docs/COMPARISON.md)（附魔差异详解）和 [`docs/TECHNICAL_ISSUES.md`](docs/TECHNICAL_ISSUES.md)。
 
@@ -196,9 +185,8 @@ gradlew build
 ## 已知问题
 
 - **附魔台**无法直接附魔枪械，请使用铁砧 + 附魔书
-- **快速扳机 (未实现)**：CGM v0.15.3 冷却硬编码，无法拦截
-- **弹药回收**退弹时也会触发（修复中）
 - CoreMod 可能与其他修改 CGM 的模组冲突
+- 本模组未进行多人游戏测试，服务器使用请谨慎
 
 ## 致谢
 
