@@ -42,11 +42,10 @@ public class EnchantmentArcLightStarter extends EnchantmentGunBase {
 
     @Override
     protected boolean canApplyTogether(Enchantment other) {
-        // 默认与纵火者冲突，可通过配置覆盖
+        // 默认与纵火者冲突（同类弹道效果），可通过 JVM 参数覆盖：
+        //   -Dcgmenchant.allowArcLightWithFire=true
         if (other instanceof EnchantmentFireStarter) {
-            return net.minecraftforge.fml.common.Loader.instance().getIndexedModList()
-                    .get("cgmenchant").getMetadata().version != null
-                    && Boolean.parseBoolean(System.getProperty("cgmenchant.allowArcLightWithFire", "false"));
+            return Boolean.parseBoolean(System.getProperty("cgmenchant.allowArcLightWithFire", "false"));
         }
         return super.canApplyTogether(other);
     }

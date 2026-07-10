@@ -246,30 +246,29 @@ CGM 原始类:                    本模组注入后:
 这是两个模块精密配合的完整链路：
 
 ```
-                     ┌─ CGM 原版数据流（被 CoreMod 切断）──┐
-                     │                                      │
-   Gun JSON 配置 ──→ Gun.serverGun.general.maxAmmo (= 30)   │
-                                               ↑            │
-                                     isWeaponFull() 读取    │ ← 永远读静态值
-                                                             │
-                     └──────────────────────────────────────┘
+                      CGM 原版数据流（被 CoreMod 切断）─
+                     │                                     
+   Gun JSON 配置 ──→ Gun.serverGun.general.maxAmmo (= 30)   
+                                               ↑            
+                                     isWeaponFull() 读取   ← 永远读静态值
+                                                             
+                     
 
-                     ┌─ 本模组的替换数据流 ─────────────────────┐
-                     │                                          │
-                      GunStateHandler (PlayerTickEvent START)    │
-                     │                                         │
-                        ├─ 反射: 读 Gun.general.maxAmmo          │
-                      ├─ 计算: boosted = base * (1 + 0.5 * ocLevel) │
-                      ├─ 反射: 写 Gun.general.maxAmmo = boosted  │
-                          └─ NBT:  写 tag["MaxAmmo"] = boosted   │
-                              │                                  │
-                              ▼                                  │
-                     isWeaponFull() [CoreMod 替换后]             │
-                       读取 tag["MaxAmmo"]  ← NBT 动态值         │
-                              │                                  │
-                              ▼                                  │
-                     返回: ammo >= boosted ? 停止 : 继续装填     │
-                     └──────────────────────────────────────────┘
+                     本模组的替换数据流 
+                     │                                        
+                     GunStateHandler (PlayerTickEvent START)  
+                     │                                        
+                    ├─ 反射: 读 Gun.general.maxAmmo            
+                    ├─ 计算: boosted = base * (1 + 0.5 * ocLevel)
+                    ├─ 反射: 写 Gun.general.maxAmmo = boosted  
+                    └─ NBT:  写 tag["MaxAmmo"] = boosted      
+                   │                                         
+                    ▼                                          
+                     isWeaponFull() [CoreMod 替换后]            
+                      读取 tag["MaxAmmo"]  ← NBT 动态值         
+                    │                                          
+                     ▼                                         
+                     返回: ammo >= boosted ? 停止 : 继续装填     
 ```
 
 **关键点**：CoreMod 的替换不是"改 Gun 对象的值"，而是"改 isWeaponFull 读值的**来源**"——从字段链改为 NBT。这让 GunStateHandler 可以通过 NBT 标签系统完全控制弹容量的表现值。
@@ -322,6 +321,8 @@ CGM 原始类:                    本模组注入后:
 | CGM 更新后 isWeaponFull() 的内部字段链改变 | 中等 | bytecode 匹配失败，不影响其他功能但不改弹容量 |
 | MCP 映射版本变化导致 SRG 名改变 | 低 | func_74762_e 不再对应 getInteger，报 NoSuchMethodError |
 
+备注：所有者暂时没有能力测试多人游戏下的性能，以上是单人游戏的考虑。
+
 ### 为什么在上述风险下仍然选择 CoreMod？
 
 这个决定的根源来自一次真实的前置灾难。一个叫 **Cotesia Glomerata**（寄生蜂）的 **逃逸：寄生体 (SRP)** 插件，需要**三个**独立前置模组才能运行：
@@ -330,7 +331,7 @@ CGM 原始类:                    本模组注入后:
 - **GeckoLib**（动画库）
 - **MixinBooter**（1.12.2 Forge 的 Mixin 加载器）
 
-结果：SRP、寄生蜂、GeckoLib、MixinBooter 这四个模组——**有时候互相检测不到，有时候又直接互相排斥**——尽管所有版本要求都满足了。这不是任何一个模组的 bug，是依赖链本身就脆弱。
+结果：SRP、寄生蜂、GeckoLib、MixinBooter 这四个模组——**有时候互相检测不到，有时候又直接互相排斥**——尽管所有版本要求都满足了。
 
 我们有确凿证据。以下是在要求下当场复现的真实崩溃：
 
@@ -362,6 +363,8 @@ SRP V1.10.7          寄生蜂 V1.3.4h1
 > **模组的前置应该尽可能少而简练。**
 > 不只是为了好配置——更因为前置越少，越不容易牵一发而动全身。
 
+所有者注：（如果寄生蜂的作者还不更新我就要自己想办法整一套解决方案。）
+
 CoreMod 是唯一满足这条规则的方案：
 
 1. **零额外前置**：本模组的运行时依赖只有两项——CGM 和 Obfuscate（后者仅因 CGM 本身需要）。没有额外的库，没有补丁框架。每多一个前置，就是用户 mods 文件夹里多一个潜在的爆炸点。
@@ -369,7 +372,34 @@ CoreMod 是唯一满足这条规则的方案：
 3. **完全自包含**：所有字节码操作用纯 ASM（`org.objectweb.asm`，Minecraft 自带）手写实现。不需要任何外部工具。
 4. **零传递依赖风险**：因为 ASM 代码是我们自己写的，不存在"第三方库 A 要版本 X、库 B 要版本 Y"的传递依赖冲突。今天能编译的，明天照样能编译。
 
-## 5. 文件索引
+## 5. Development Stance
+
+As of July 2026, the project owner has reviewed the SRP / Cotesia Glomerata dependency catastrophe and fully understands the reasoning behind the CoreMod decision.
+
+The mod is now feature-complete for its target platform (CGM v0.15.3, Minecraft 1.12.2). The CoreMod structure will remain as-is unless:
+
+1. A critical bug forces a change in the bytecode injection approach, or
+2. A new feature requires additional injection points that cannot be implemented within the current architecture.
+
+**Future-proofing note:** If the owner decides to port the original enchantments (Arc Light, High Explosive, FELLBULLET series) to newer Minecraft versions (1.21+ with Fabric/NeoForge), the CoreMod will be **abandoned** in favor of Mixin (which is natively supported by modern loaders). The CoreMod exists solely because of the constraints of 1.12.2 Forge — it is a means to an end, not a permanent architectural choice.
+
+---
+
+## 5. 开发立场（中文）
+
+截至 2026 年 7 月，项目所有者已了解 SRP / 寄生蜂 (Cotesia Glomerata) 的前置依赖灾难，并完全理解 CoreMod 决策背后的原因。
+
+模组在当前目标平台（CGM v0.15.3, Minecraft 1.12.2）上已基本成形。CoreMod 结构将保持现状，除非：
+
+1. 出现严重 Bug 迫使字节码注入方案变更，或
+2. 新功能需要当前架构无法实现的额外注入点。
+
+**未来规划：** 如果所有者决定将原创附魔（弧光引导、高爆弹、FELLBULLET 系列）搬运到新版本（1.21+，Fabric/NeoForge），CoreMod 将被**放弃**，转而使用 Mixin（现代加载器原生支持）。
+CoreMod 的存在完全是因为 1.12.2 Forge 的约束——它是达成目的的手段，不是永久架构选择。
+
+---
+
+## 6. 文件索引
 
 | 文件 | 角色 |
 |------|------|
@@ -382,4 +412,4 @@ CoreMod 是唯一满足这条规则的方案：
 
 ---
 
-*Last updated: 2026-07-07 · CGM v0.15.3 + Forge 1.12.2-14.23.5.2859*
+*Last updated: 2026-07-08 · CGM v0.15.3 + Forge 1.12.2-14.23.5.2859*

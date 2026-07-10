@@ -49,6 +49,31 @@ public class ModEnchantments {
         new EnchantmentGunBase(Enchantment.Rarity.UNCOMMON, WEAPON, 1) {
             public String getEnchantmentName() { return "lightweight"; }
             public String getDisplayName() { return "轻装上阵"; }
+
+            @Override
+            public boolean canApply(net.minecraft.item.ItemStack stack) {
+                if (!super.canApply(stack)) return false;
+                // 检查是否能开镜（榴弹发射器、火箭筒等不能）
+                try {
+                    Object gun = stack.getItem().getClass().getMethod("getGun").invoke(stack.getItem());
+                    // 尝试读 modules.zoom
+                    try {
+                        java.lang.reflect.Field modF = gun.getClass().getDeclaredField("modules");
+                        modF.setAccessible(true);
+                        Object modules = modF.get(gun);
+                        if (modules != null) {
+                            java.lang.reflect.Field zoomF = modules.getClass().getDeclaredField("zoom");
+                            zoomF.setAccessible(true);
+                            if (zoomF.get(modules) != null) return true;
+                        }
+                    } catch (Exception ignored) {}
+                    // 没有 zoom → 检查是否有 scope 配件槽
+                    String id = stack.getItem().getRegistryName().toString().toLowerCase();
+                    return !id.contains("bazooka") && !id.contains("grenade_launcher");
+                } catch (Exception e) {
+                    return true; // 反射失败默认允许
+                }
+            }
         });
 
     // AMMO
@@ -61,7 +86,7 @@ public class ModEnchantments {
     public static final EnchantmentGunBase RECLAIMED = add(
         new EnchantmentGunBase(Enchantment.Rarity.UNCOMMON, AMMO, 3) {
             public String getEnchantmentName() { return "reclaimed"; }
-            public String getDisplayName() { return "弹药回收"; }
+            public String getDisplayName() { return "勤俭节约"; }
         });
 
     // PROJECTILE
@@ -81,6 +106,14 @@ public class ModEnchantments {
         new EnchantmentGunBase(Enchantment.Rarity.VERY_RARE, PROJECTILE, 3) {
             public String getEnchantmentName() { return "collateral"; }
             public String getDisplayName() { return "间接伤害"; }
+
+            @Override
+            protected boolean canApplyTogether(net.minecraft.enchantment.Enchantment other) {
+                // 与高爆弹、纵火者互斥
+                if (other instanceof EnchantmentHighExplosive) return false;
+                if (other instanceof EnchantmentFireStarter) return false;
+                return super.canApplyTogether(other);
+            }
         });
 
     public static final EnchantmentGunBase FIRE_STARTER = add(
@@ -94,17 +127,33 @@ public class ModEnchantments {
     public static final EnchantmentGunBase HIGH_EXPLOSIVE = add(
         new EnchantmentHighExplosive());
 
+    // ==== 凶弹-地霰形 (FELLBULLET) — 地面红圈蓄力 → 360° 散射 ====
+    public static final EnchantmentGunBase FELLBULLET = add(
+        new EnchantmentSinBullet());
+
+    // ==== 凶弹-贯霰形 (FELLBULLET Piercer) — 背后红圈蓄力 → 锥形散射 ====
+    public static final EnchantmentGunBase FELLBULLET_PIERCER = add(
+        new EnchantmentFellbulletPiercer());
+
     private static EnchantmentGunBase add(EnchantmentGunBase e) {
         ENCHANTMENTS.add(e);
         return e;
     }
 
-    public static void register() {
+    /**
+     * 注册所有附魔。
+     *
+     * @return true 表示 ItemGun 类可用（附魔将正常工作）；
+     *         false 表示 CGM 未加载，所有附魔注册但 canApply() 始终返回 false。
+     */
+    public static boolean register() {
+        boolean available = EnchantmentGunBase.isItemGunAvailable();
         net.minecraftforge.registries.IForgeRegistry<Enchantment> registry =
                 GameRegistry.findRegistry(Enchantment.class);
         for (EnchantmentGunBase e : ENCHANTMENTS) {
             registry.register(e);
         }
+        return available;
     }
 
     public static List<EnchantmentGunBase> getAll() {

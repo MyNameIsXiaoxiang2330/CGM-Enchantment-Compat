@@ -32,7 +32,6 @@ import java.util.Map;
 public class GunStateHandler {
 
     private static final String AMMO_KEY = "AmmoCount";
-    private static final String PREV_AMMO_KEY = "cgm_prev_ammo";
     private static final String QH_TICK_KEY = "qh_tick";
 
     /**
@@ -45,6 +44,7 @@ public class GunStateHandler {
      * 不再信任被污染的共享 Gun 字段。
      */
     private static final Map<Item, Integer> BASE_MAX_AMMO = new HashMap<>();
+    private static final Map<Item, Integer> BASE_RATE = new HashMap<>();
 
     @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -84,6 +84,17 @@ public class GunStateHandler {
                 setGunMaxAmmo(main, baseMaxAmmo);
                 tag.setInteger("MaxAmmo", baseMaxAmmo);
             }
+
+            // ========== 快速扳机 (Trigger Finger): 每级减 1 tick 射速 ==========
+            int tfLevel = EnchantHelper.getLevel(main, ModEnchantments.TRIGGER_FINGER);
+            if (tfLevel > 0) {
+                int baseRate = getBaseRate(main);
+                int reduced = Math.max(1, baseRate - tfLevel * 4);
+                setGunRate(main, reduced);
+            } else {
+                setGunRate(main, getBaseRate(main));
+            }
+
             return;
         }
 
@@ -93,25 +104,7 @@ public class GunStateHandler {
         int curAmmo = tag.getInteger(AMMO_KEY);
         int maxAmmo = tag.getInteger("MaxAmmo");
 
-        // ==== 弹药回收 (Reclaimed) ====
-        int rcLevel = EnchantHelper.getLevel(main, ModEnchantments.RECLAIMED);
-        if (rcLevel > 0) {
-            int prev = tag.hasKey(PREV_AMMO_KEY) ? tag.getInteger(PREV_AMMO_KEY) : curAmmo;
-            if (prev > curAmmo) {
-                float chance;
-                if (rcLevel == 1) chance = 1.0f / 3.0f;
-                else if (rcLevel == 2) chance = 0.5f;
-                else chance = 7.0f / 8.0f;
-                if (player.getRNG().nextFloat() < chance) {
-                    if (curAmmo < maxAmmo) {
-                        tag.setInteger(AMMO_KEY, curAmmo + 1);
-                    }
-                }
-            }
-            tag.setInteger(PREV_AMMO_KEY, curAmmo);
-        } else {
-            tag.removeTag(PREV_AMMO_KEY);
-        }
+        // ==== 勤俭节约 — 逻辑已移至 DamageHandler，命中目标时触发 ====
 
         // ==== 熟练手 (Quick Hands) ====
         int qhLevel = EnchantHelper.getLevel(main, ModEnchantments.QUICK_HANDS);
@@ -186,4 +179,33 @@ public class GunStateHandler {
             general.getClass().getField("maxAmmo").setInt(general, value);
         } catch (Exception ignored) {}
     }
+
+    /** 获取枪型原始射速 */
+    private int getBaseRate(ItemStack stack) {
+        Item item = stack.getItem();
+        Integer cached = BASE_RATE.get(item);
+        if (cached != null) return cached;
+        int base = readGunRate(item);
+        BASE_RATE.put(item, base);
+        return base;
+    }
+
+    /** 从 Gun 对象读取 rate */
+    private int readGunRate(Item item) {
+        try {
+            Object gun = item.getClass().getMethod("getGun").invoke(item);
+            Object general = gun.getClass().getField("general").get(gun);
+            return general.getClass().getField("rate").getInt(general);
+        } catch (Exception e) { return 3; }
+    }
+
+    /** 写入 Gun 对象的 rate */
+    private void setGunRate(ItemStack stack, int value) {
+        try {
+            Object gun = stack.getItem().getClass().getMethod("getGun").invoke(stack.getItem());
+            Object general = gun.getClass().getField("general").get(gun);
+            general.getClass().getField("rate").setInt(general, value);
+        } catch (Exception ignored) {}
+    }
+
 }

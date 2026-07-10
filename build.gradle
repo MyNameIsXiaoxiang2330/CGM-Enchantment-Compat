@@ -101,3 +101,18 @@ clean {
     delete "$projectDir/.cache"
     delete "$projectDir/run"
 }
+
+// 构建后自动复制到测试端 mods 目录（先删旧版，防冲突）
+task copyToTest(type: Copy) {
+    dependsOn build
+    doFirst {
+        delete fileTree('E:/MinecraftEAT/.minecraft/versions/1.12.2-Forge_14.23.5.2864CGM/mods') {
+            include 'cgmenchant-*.jar'
+        }
+    }
+    from jar.archivePath
+    into 'E:/MinecraftEAT/.minecraft/versions/1.12.2-Forge_14.23.5.2864CGM/mods'
+}
+
+// build 完了自动跑 copy
+build.finalizedBy(copyToTest)

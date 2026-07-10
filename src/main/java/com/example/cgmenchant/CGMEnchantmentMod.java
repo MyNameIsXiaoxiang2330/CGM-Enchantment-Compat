@@ -25,6 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.apache.logging.log4j.Logger;
 
 @Mod(
@@ -41,8 +42,13 @@ public class CGMEnchantmentMod {
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
 
-        ModEnchantments.register();
-        logger.info("Registered {} gun enchantments", ModEnchantments.ENCHANTMENTS.size());
+        boolean cgmAvailable = ModEnchantments.register();
+        if (!cgmAvailable) {
+            logger.warn("ItemGun class not found! CGM mod may not be installed. " +
+                        "All enchantments registered but canApply() will return false.");
+        }
+        logger.info("Registered {} gun enchantments (CGM available: {})",
+                    ModEnchantments.ENCHANTMENTS.size(), cgmAvailable);
 
         // 初始化创造模式标签页
         TabCGMEnchant.INSTANCE.getTabIconItem();
@@ -54,12 +60,21 @@ public class CGMEnchantmentMod {
         MinecraftForge.EVENT_BUS.register(new ArcLightHandler());
         MinecraftForge.EVENT_BUS.register(new HighExplosiveHandler());
         MinecraftForge.EVENT_BUS.register(new GunStateHandler());
+        MinecraftForge.EVENT_BUS.register(new SinBulletHandler());
+        MinecraftForge.EVENT_BUS.register(new FellbulletPiercerHandler());
+        MinecraftForge.EVENT_BUS.register(new PlayerJoinHandler());
         logger.info("Event handlers registered");
     }
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
         logger.info("{} v{} loaded!", Reference.MOD_NAME, Reference.VERSION);
+    }
+
+    @EventHandler
+    public void serverStart(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandCGMEnchant());
+        logger.info("/cgmen command registered");
     }
 
     public static Logger getLogger() { return logger; }

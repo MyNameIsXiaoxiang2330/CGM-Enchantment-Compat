@@ -22,7 +22,7 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 
 ## Enchantments
 
-### Standard — CGM official (8)
+### Standard — CGM official (9)
 
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
@@ -33,7 +33,7 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 | **Lightweight** | I | +20% move speed while aiming, reduced spread |
 | **Over Capacity** | III | Magazine +50% capacity per level (per-gun) |
 | **Quick Hands** | II | Reload interval -3 ticks per level |
-| **Reclaimed** | III | 33% / 50% / 87.5% chance to refund ammo |
+| **Thrifty** (勤俭节约) | III | 33% / 50% / 87.5% chance to refund ammo on hit |
 
 ### Original (2)
 
@@ -53,7 +53,7 @@ Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.cu
 
 | Enchantment | Max Level | Reason |
 |-------------|-----------|--------|
-| **Trigger Finger** | I~III | CGM v0.15.3 cooldown system is hardcoded and cannot be intercepted |
+| **Trigger Finger** (WIP) | I~III | CGM v0.15.3 cooldown system is hardcoded and cannot be intercepted |
 
 | Enchantment | Max Level | Effect |
 |-------------|-----------|--------|
@@ -146,7 +146,7 @@ Requirements:
 | 轻装上阵 | I | 开镜移速 +20%，散布减小 |
 | 超容量 | III | 弹匣容量 +50%/级 |
 | 熟练手 | II | 装弹间隔 -3 tick/级 |
-| 弹药回收 | III | 33%/50%/87.5% 概率返还 |
+| 勤俭节约 | III | 命中目标后 33%/50%/87.5% 概率返还弹药 |
 
 ### 原创附魔（2 个）
 
@@ -166,7 +166,7 @@ Requirements:
 
 | 附魔 | 最大等级 | 原因 |
 |------|---------|------|
-| 快速扳机 | I~III | CGM v0.15.3 冷却系统硬编码，无法拦截 |
+| 快速扳机 (未实现) | I~III | CGM v0.15.3 冷却系统硬编码，无法拦截 |
 
 > 附魔台无法直接附魔枪械，请使用「**铁砧 + 附魔书**」组合。
 >
@@ -196,7 +196,7 @@ gradlew build
 ## 已知问题
 
 - **附魔台**无法直接附魔枪械，请使用铁砧 + 附魔书
-- **快速扳机**已禁用（CGM v0.15.3 冷却硬编码）
+- **快速扳机 (未实现)**：CGM v0.15.3 冷却硬编码，无法拦截
 - **弹药回收**退弹时也会触发（修复中）
 - CoreMod 可能与其他修改 CGM 的模组冲突
 

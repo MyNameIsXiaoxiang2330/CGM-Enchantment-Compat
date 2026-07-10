@@ -46,11 +46,10 @@ public class EnchantmentHighExplosive extends EnchantmentGunBase {
 
     @Override
     protected boolean canApplyTogether(Enchantment other) {
-        // 与间接伤害冲突
+        // 与间接伤害、纵火者互斥
+        if (other instanceof EnchantmentFireStarter) return false;
         if (other instanceof EnchantmentGunBase &&
-            "collateral".equals(((EnchantmentGunBase) other).getEnchantmentName())) {
-            return false;
-        }
+            "collateral".equals(((EnchantmentGunBase) other).getEnchantmentName())) return false;
         return super.canApplyTogether(other);
     }
 

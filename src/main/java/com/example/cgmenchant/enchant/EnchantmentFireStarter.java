@@ -37,4 +37,13 @@ public class EnchantmentFireStarter extends EnchantmentGunBase {
     public String getDisplayName() {
         return "纵火者";
     }
+
+    @Override
+    protected boolean canApplyTogether(net.minecraft.enchantment.Enchantment other) {
+        // 与高爆弹、间接伤害互斥
+        if (other instanceof EnchantmentHighExplosive) return false;
+        if (other instanceof EnchantmentGunBase &&
+            "collateral".equals(((EnchantmentGunBase) other).getEnchantmentName())) return false;
+        return super.canApplyTogether(other);
+    }
 }

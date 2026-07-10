@@ -61,6 +61,14 @@ public class BulletHandler {
 
         int eid = entity.getEntityId();
 
+        // 凶弹 Miss 惩罚追踪
+        int fellLevel = EnchantHelper.getLevel(gun, ModEnchantments.FELLBULLET);
+        int piercerLevel = EnchantHelper.getLevel(gun, ModEnchantments.FELLBULLET_PIERCER);
+        int fellLvl = Math.max(fellLevel, piercerLevel);
+        if (fellLvl > 0) {
+            FellbulletTracker.onFired(shooter.getUniqueID(), fellLvl, shooter.world.getTotalWorldTime());
+        }
+
         // 加速器 (Accelerator): 提高弹速
         int accelLevel = EnchantHelper.getLevel(gun, ModEnchantments.ACCELERATOR);
         if (accelLevel > 0) {

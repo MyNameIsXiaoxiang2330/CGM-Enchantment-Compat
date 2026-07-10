@@ -29,10 +29,28 @@ import net.minecraft.util.ResourceLocation;
 public abstract class EnchantmentGunBase extends Enchantment {
 
     private static Class<?> itemGunClass;
-    static {
-        try {
-            itemGunClass = Class.forName(Reference.CGM_ITEM_GUN_CLASS);
-        } catch (ClassNotFoundException e) {}
+    private static boolean itemGunLookupFailed = false;
+
+    /**
+     * 懒加载 ItemGun 类引用。
+     * 不依赖静态初始化：确保在 CGM 类尚未加载时不会静默失败，
+     * 而是推迟到第一次 canApply() 调用时重试。
+     */
+    private static Class<?> getGunClass() {
+        if (itemGunClass == null && !itemGunLookupFailed) {
+            try {
+                itemGunClass = Class.forName(Reference.CGM_ITEM_GUN_CLASS);
+            } catch (ClassNotFoundException e) {
+                itemGunLookupFailed = true;
+                // 在 register() 时还会再检查一次并打日志
+            }
+        }
+        return itemGunClass;
+    }
+
+    /** 检查是否成功加载了 ItemGun 类（供 register() 时检查用） */
+    public static boolean isItemGunAvailable() {
+        return getGunClass() != null;
     }
 
     protected final EnchantmentType type;
@@ -55,7 +73,8 @@ public abstract class EnchantmentGunBase extends Enchantment {
 
     @Override
     public boolean canApply(ItemStack stack) {
-        return itemGunClass != null && itemGunClass.isInstance(stack.getItem());
+        Class<?> clazz = getGunClass();
+        return clazz != null && !stack.isEmpty() && clazz.isInstance(stack.getItem());
     }
 
     @Override
@@ -65,10 +84,7 @@ public abstract class EnchantmentGunBase extends Enchantment {
 
     @Override
     protected boolean canApplyTogether(Enchantment other) {
-        if (other instanceof EnchantmentGunBase) {
-            return ((EnchantmentGunBase) other).type != this.type;
-        }
-        return super.canApplyTogether(other);
+        return true; // 默认无冲突，具体冲突由各附魔覆写
     }
 
     @Override

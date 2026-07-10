@@ -25,6 +25,8 @@ import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -87,6 +89,106 @@ public class DamageHandler {
         }
 
         event.setAmount(damage);
+
+        // ==== 凶弹基础增伤：每级+25%枪械基础伤害 ====
+        int fellLevel = EnchantHelper.getLevel(shooter, ModEnchantments.FELLBULLET);
+        int piercerLevel = EnchantHelper.getLevel(shooter, ModEnchantments.FELLBULLET_PIERCER);
+        int fellLvl = Math.max(fellLevel, piercerLevel);
+        if (fellLvl > 0) {
+            ItemStack gun = shooter.getHeldItemMainhand();
+            if (!EnchantHelper.isGun(gun)) {
+                gun = shooter.getHeldItemOffhand();
+            }
+            if (EnchantHelper.isGun(gun)) {
+                float gunBase = getCGMProjectileDamage(gun);
+                int projCount = getCGMProjectileCount(gun);
+                if (projCount <= 1) {
+                    // 普通枪：每级+10%基础伤害
+                    damage += gunBase * fellLvl * 0.1f;
+                } else {
+                    // 霰弹枪：每发 = 基础 + 基础×等级×0.5 + (1 + 等级×0.25)
+                    float perPellet = gunBase + gunBase * fellLvl * 0.5f + (1 + fellLvl * 0.25f);
+                    damage = perPellet * projCount;
+                }
+                event.setAmount(damage);
+            }
+        }
+
+        // ==== 勤俭节约：命中目标后概率回复弹药 ====
+        int thriftyLevel = EnchantHelper.getLevel(shooter, ModEnchantments.RECLAIMED);
+        if (thriftyLevel > 0) {
+            ItemStack gun = shooter.getHeldItemMainhand();
+            if (!EnchantHelper.isGun(gun)) {
+                gun = shooter.getHeldItemOffhand();
+            }
+            if (EnchantHelper.isGun(gun) && gun.getTagCompound() != null) {
+                NBTTagCompound tag = gun.getTagCompound();
+                int curAmmo = tag.getInteger("AmmoCount");
+                int maxAmmo = tag.getInteger("MaxAmmo");
+                if (maxAmmo <= 0) maxAmmo = 30;
+
+                float chance;
+                if (thriftyLevel == 1) chance = 1.0f / 3.0f;    // 33%
+                else if (thriftyLevel == 2) chance = 0.50f;     // 50%
+                else chance = 0.875f;                            // Ⅲ级 87.5%
+
+                if (curAmmo < maxAmmo && shooter.getRNG().nextFloat() < chance) {
+                    tag.setInteger("AmmoCount", curAmmo + 1);
+                }
+            }
+        }
+    }
+
+    /** 从 CGM Gun 对象反射读取字段（尝试多个名称） */
+    private Object getGunField(Object obj, String... names) throws Exception {
+        for (String n : names) {
+            try {
+                java.lang.reflect.Field f = obj.getClass().getDeclaredField(n);
+                f.setAccessible(true);
+                return f.get(obj);
+            } catch (NoSuchFieldException ignored) {}
+            try {
+                java.lang.reflect.Field f = obj.getClass().getField(n);
+                f.setAccessible(true);
+                return f.get(obj);
+            } catch (NoSuchFieldException ignored) {}
+        }
+        throw new NoSuchFieldException();
+    }
+
+    /** 反射读取 CGM 枪械的基础伤害 */
+    private float getCGMProjectileDamage(ItemStack gun) {
+        try {
+            Object gunObj = gun.getItem().getClass().getMethod("getGun").invoke(gun.getItem());
+            // 先试试字段，再试试内部类
+            Object proj = null;
+            try { proj = getGunField(gunObj, "projectile", "Projectile"); } catch (Exception ignored) {}
+            if (proj == null) {
+                for (Class<?> inner : gunObj.getClass().getDeclaredClasses()) {
+                    if (inner.getSimpleName().equals("Projectile")) {
+                        proj = inner.cast(inner.getMethod("getProjectile").invoke(gunObj));
+                        break;
+                    }
+                }
+            }
+            if (proj == null) return 5.0f;
+            Object dmg = getGunField(proj, "damage", "Damage");
+            return ((Number) dmg).floatValue();
+        } catch (Exception e) {
+            return 5.0f;
+        }
+    }
+
+    /** 反射读取 CGM 枪械的弹丸数（霰弹用） */
+    private int getCGMProjectileCount(ItemStack gun) {
+        try {
+            Object gunObj = gun.getItem().getClass().getMethod("getGun").invoke(gun.getItem());
+            Object general = getGunField(gunObj, "general", "General");
+            Object cnt = getGunField(general, "projectileCount", "ProjectileCount");
+            return ((Number) cnt).intValue();
+        } catch (Exception e) {
+            return 1;
+        }
     }
 
     private float getArmorReduction(EntityLivingBase entity) {

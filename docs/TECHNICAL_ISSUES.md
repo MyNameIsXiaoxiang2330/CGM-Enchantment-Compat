@@ -10,7 +10,7 @@
 **附魔**: 弹药回收 (Reclaimed)
 **问题**: 按退弹键（R）时，弹药回收的返还逻辑会错误触发，导致退弹后子弹不减反增。
 
-**难度**: ⭐⭐⭐⭐⭐ — CGM 没有提供"是否在开枪"的 API，需要绕路检测。
+
 
 ### 尝试的解决方案
 
@@ -36,6 +36,8 @@ PlayerTickEvent.END
 
 **关键**: `world.getTotalWorldTime()` 在同一服务器 tick 内返回值一致，无时序问题。
 
+所有者注：其实还有通过击杀计算的解决方案，如果实在是修不好，那就做一个通过击杀返回弹药的新附魔作为平替
+
 ---
 
 ## 2. 附魔台不识别枪械
@@ -52,7 +54,7 @@ PlayerTickEvent.END
 
 - 使用自定义 `EnumEnchantmentType`（需 Forge 注册扩展）
 - 目前 README 已告知用户**使用铁砧+附魔书**作为临时方案
-
+所有者注：这个蠢货没有告诉你们怎么拿到附魔书（实际上我也没想好，也许通过附魔台用书进行附魔30级应该就会有。）
 ---
 
 ## 3. Collateral 间接伤害粒子
@@ -70,6 +72,8 @@ PlayerTickEvent.END
 | 初版 | FLAME | 5格 | 3 | 0.05 | 不可见 |
 | 二版 | FLAME | 5格 | 3 | 0.05 | 改用 Packet 后可见，但粒子大 |
 | 三版 | FIREWORKS_SPARK | 2格 | 1 | 0.001 | 白色烟花，贴紧弹道 |
+
+所有者注：作者因为很多原因没法测试模组在多人游戏下的性能，所以，额。
 
 ---
 
@@ -103,6 +107,13 @@ return Boolean.parseBoolean(System.getProperty("cgmenchant.allowArcLightWithFire
 - 创造模式标签页保留 — 方便调试
 - 注册不变 — 避免存档数据丢失
 
+所有者注：小龙虾你一点路都没给留，你怎么这么自私，呸。（玩梗，开玩笑的）
+反正在这一方面我花费了不少Token，没有解决办法。
+
+**Owner's note (EN):**
+MrCrayfish: "API hooks? Never heard of her." — Zero hooks, zero forks given. The man really closed every door and called it a day. 🦞
+Wasted way too many Tokens on this. No solution found. Shelved.
+
 ---
 
 ## 6. 超容量共享 Gun 对象污染
@@ -124,22 +135,13 @@ return Boolean.parseBoolean(System.getProperty("cgmenchant.allowArcLightWithFire
    └─ 在每个 tick 开始时将枪的 maxAmmo 设为正确值（原始值 or BOOSTED）
 ```
 
----
+所有者注:额 至少可以正常用，大概？
 
-## 7. 构建自动复制失败
 
-**问题**: `build.finalizedBy(copyToTest)` 在 Windows 下因文件锁导致删除旧 jar 失败。
-
-**原因**: Minecraft 游戏进程或文件管理器占用了 `mods/` 目录下的旧 jar，Gradle 的 `delete` 任务无法删除。
-
-**处理**: 暂无完美方案。构建前关闭游戏即可。兜底命令：
-```powershell
-Copy-Item "build\libs\cgmenchant-0.0.7.xxx.jar" -Destination "测试端\mods\" -Force
-```
 
 ---
 
-## 8. 已知未解决的问题
+## 7. 已知未解决的问题
 
 | 问题 | 影响 | 优先级 |
 |------|------|--------|
@@ -149,7 +151,7 @@ Copy-Item "build\libs\cgmenchant-0.0.7.xxx.jar" -Destination "测试端\mods\" -
 
 ---
 
-## 9. 版本演进
+## 8. 版本演进（开发者版）
 
 | 版本 | 日期 | 主要变更 |
 |------|------|---------|
