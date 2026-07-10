@@ -115,12 +115,6 @@ public class SinBulletHandler {
         // 凶弹 Miss 惩罚检查
         FellbulletTracker.tick(ws);
 
-        // 性能统计：每 100 ticks 输出活跃射线数
-        if (event.world.getTotalWorldTime() % 100 == 0 && !activeRays.isEmpty()) {
-            net.minecraftforge.fml.common.FMLLog.log.info(
-                "[cgmenchant perf] FELLBULLET: {} active rays", activeRays.size());
-        }
-
         // ---- 阶段 1: 蓄力 / 逐波散射 ----
         Iterator<Map.Entry<UUID, SinCharge>> cit = charges.entrySet().iterator();
         while (cit.hasNext()) {

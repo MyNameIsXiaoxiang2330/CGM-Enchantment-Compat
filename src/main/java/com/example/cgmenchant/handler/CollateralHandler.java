@@ -43,10 +43,6 @@ import java.util.Set;
 
 public class CollateralHandler {
 
-    // 性能统计：每 100 ticks 输出一次粒子发包量
-    private static int packetCount = 0;
-    private static int tickCounter = 0;
-
     private final Queue<Rayan> pendingRays = new LinkedList<>();
 
     @SubscribeEvent
@@ -84,18 +80,6 @@ public class CollateralHandler {
         if (event.phase != TickEvent.Phase.END) return;
         if (event.world.isRemote) return;
 
-        // 性能统计：每 100 ticks 输出粒子发包量
-        tickCounter++;
-        if (tickCounter >= 100) {
-            if (packetCount > 0) {
-                net.minecraftforge.fml.common.FMLLog.log.info(
-                    "[cgmenchant perf] Collateral: {} packets in last 100 ticks ({} per tick)",
-                    packetCount, (float)packetCount / 100f);
-            }
-            packetCount = 0;
-            tickCounter = 0;
-        }
-
         if (pendingRays.isEmpty()) return;
 
         while (!pendingRays.isEmpty()) {
@@ -126,7 +110,6 @@ public class CollateralHandler {
                         if (player.dimension == ws.provider.getDimension()
                             && player.getDistanceSq(current.x, current.y, current.z) < 16384) {
                             player.connection.sendPacket(packet);
-                            packetCount++;
                         }
                     }
                 }

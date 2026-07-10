@@ -96,23 +96,15 @@ return Boolean.parseBoolean(System.getProperty("cgmenchant.allowArcLightWithFire
 
 ---
 
-## 5. 快速扳机禁用
+## 5. 快速扳机（已修复）
 
 **附魔**: Trigger Finger (快速扳机)
 
-**原因**: CGM v0.15.3 使用硬编码的冷却系统 (`CommonEvents.ReloadTracker` + cooldown)，无法从外部拦截或修改射击间隔。启用快速扳机会与冷却系统冲突导致射击行为异常。
+**状态**: ✅ 已修复（v0.0.7.012）
 
-**处理**:
-- `canApplyAtEnchantingTable()` 返回 `false` — 从附魔台移除
-- 创造模式标签页保留 — 方便调试
-- 注册不变 — 避免存档数据丢失
+**修复方案**: 和超容量相同，每 tick 在 PlayerTickEvent.START 反射修改 `Gun.general.rate` 字段，降低射速冷却。`BASE_RATE` 缓存防共享 Gun 污染。最低 1 tick，不会崩。
 
-所有者注：小龙虾你一点路都没给留，你怎么这么自私，呸。（玩梗，开玩笑的）
-反正在这一方面我花费了不少Token，没有解决办法。
-
-**Owner's note (EN):**
-MrCrayfish: "API hooks? Never heard of her." — Zero hooks, zero forks given. The man really closed every door and called it a day. 🦞
-Wasted way too many Tokens on this. No solution found. Shelved.
+**效果**: 每级减 4 tick 射速。
 
 ---
 
@@ -145,9 +137,7 @@ Wasted way too many Tokens on this. No solution found. Shelved.
 
 | 问题 | 影响 | 优先级 |
 |------|------|--------|
-| 附魔台不识别枪械 | 玩家无法在附魔台直接附魔 | 中 |
-| 快速扳机无法适配冷却 | 附魔已禁用 | 低 |
-| 弹药回收退弹检测 (v.009 待测试) | 退弹时可能错误返弹 | 高 |
+| 附魔台不识别枪械 | 玩家无法在附魔台直接附魔 | 低 |
 
 ---
 
@@ -164,4 +154,8 @@ Wasted way too many Tokens on this. No solution found. Shelved.
 | 0.0.7.006 | 07-07 | 准星同心环 + 弹道追踪；FELLBULLET Piercer 贯霰形 |
 | 0.0.7.007 | 07-07 | 回收退弹 flag 标记；概率 87.5% |
 | 0.0.7.008 | 07-07 | isHandActive() + 连续减少检测 + 冷却反射（均失败）|
-| 0.0.7.009 | 07-07 | 世界 tick 追踪方案（失败），退回最简逻辑（退弹也会触发，待重新设计）|
+| 0.0.7.009 | 07-07 | 世界 tick 追踪方案（失败），退回最简逻辑 |
+| 0.0.7.010 | 07-08 | 勤俭节约/命中返还；指令系统；台词效果 |
+| 0.0.7.011 | 07-09 | 粒子工具函数；魔法阵动画；伤害系统重做 |
+| 0.0.7.012 | 07-09 | 快速扳机修复；冲突系统重构；凶弹限制；宝藏附魔 |
+| 0.0.8 | 07-09 | 公开测试版 |
