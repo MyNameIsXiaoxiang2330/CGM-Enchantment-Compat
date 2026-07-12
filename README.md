@@ -123,7 +123,7 @@ Requirements:
 
 为 [MrCrayfish's Gun Mod](https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-gun-mod) (CGM) v0.15.3 (Minecraft 1.12.2) 还原高版本枪械附魔，并包含受 *边狱公司 (Limbus Company)* EGO 启发的原创附魔。
 
-> **当前版本:** `0.0.7.009` (Dev) — 0.0.7.000~009 均为开发版。
+> **当前版本:** `0.0.8` (公开测试版)
 
 ---
 
@@ -186,10 +186,19 @@ gradlew build
 
 - **附魔台**无法直接附魔枪械，请使用铁砧 + 附魔书
 - CoreMod 可能与其他修改 CGM 的模组冲突
-- 本模组未进行多人游戏测试，服务器使用请谨慎
+
+## 开源 & 技术原理
+
+本模组基于 **GNU General Public License v3.0 (GPL-3.0)** 开源。
+源码：https://github.com/MyNameIsXiaoxiang2330/CGM-Enchantment-Compat
+
+**技术架构：**
+使用 Forge CoreMod（FMLCorePlugin + ASM）在类加载时对 CGM 进行两处最小化字节码注入——让 ItemGun 可以被附魔，以及让弹容量支持动态修改。其余全部附魔效果通过标准 @SubscribeEvent 事件驱动实现，无需 MixinBootstrap 等额外前置。
 
 ## 致谢
 
-感谢 MrCrayfish 开发了优秀的 CGM 模组。附魔名称"凶弹"参考了边狱公司 (Limbus Company) 的 EGO。
+- 感谢 MrCrayfish 开发了优秀的 CGM 模组
+- 附魔名称"凶弹"参考了边狱公司 (Limbus Company) 的 EGO
+- 台词文本翻译参考了都市零协会 (City Zero Association) 的译介作品
 
 
