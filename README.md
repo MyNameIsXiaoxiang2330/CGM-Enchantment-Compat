@@ -198,7 +198,7 @@ gradlew build
 ## 致谢
 
 - 感谢 MrCrayfish 开发了优秀的 CGM 模组
-- 附魔名称"凶弹"参考了边狱公司 (Limbus Company) 的 EGO
-- 台词文本翻译参考了都市零协会 (City Zero Association) 的译介作品
+- EGO还原附魔参考了边狱公司 (Limbus Company) 的 EGO
+- 台词文本翻译使用了都市零协会 (Localize Limbus Company) 的译介作品
 
 
