@@ -30,11 +30,34 @@ import java.util.Map;
 
 public class EnchantHelper {
 
+    /**
+     * 从玩家双手获取附魔等级（不区分是否枪械）。
+     * 注意：此方法会检查双手所有物品，包括非枪械。
+     * 在需要确保附魔只来自枪械的场景中，请改用 getGunLevel()。
+     */
     public static int getLevel(EntityPlayer player, Enchantment enchantment) {
         if (player == null) return 0;
         int level = getLevel(player.getHeldItem(EnumHand.MAIN_HAND), enchantment);
         if (level > 0) return level;
         return getLevel(player.getHeldItem(EnumHand.OFF_HAND), enchantment);
+    }
+
+    /**
+     * 安全地获取玩家持枪手上的附魔等级。
+     * 只在持有枪械的那只手上查附魔，避免副手枪械附魔错误渗透到主手非枪械攻击。
+     * 优先检查主手，如果主手不是枪则查副手。
+     *
+     * @param player      玩家
+     * @param enchantment 要查询的附魔
+     * @return 附魔等级（0 表示没有该附魔或没持枪）
+     */
+    public static int getGunLevel(EntityPlayer player, Enchantment enchantment) {
+        if (player == null) return 0;
+        ItemStack main = player.getHeldItem(EnumHand.MAIN_HAND);
+        if (isGun(main)) return getLevel(main, enchantment);
+        ItemStack off = player.getHeldItem(EnumHand.OFF_HAND);
+        if (isGun(off)) return getLevel(off, enchantment);
+        return 0;
     }
 
     public static int getLevel(ItemStack stack, Enchantment enchantment) {

@@ -48,9 +48,9 @@ public class GunStateHandler {
 
     @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.player.world.isRemote) return;
-
         EntityPlayer player = event.player;
+        boolean serverSide = !player.world.isRemote;
+
         ItemStack main = player.getHeldItemMainhand();
         if (!EnchantHelper.isGun(main)) return;
 
@@ -63,7 +63,11 @@ public class GunStateHandler {
 
         int baseMaxAmmo = getBaseMaxAmmo(main);
 
-        // ========== Phase.START: 在 CGM 运行前设置好 Gun.general.maxAmmo ==========
+        // ===================================================================
+        //  Phase.START: 在 CGM 运行前设置好 Gun.general.maxAmmo
+        //  两端都执行 — 客户端 HUD 读取共享 Gun.general.maxAmmo 来绘制蓝色耐久条，
+        //  仅在服务端执行会导致客户端读到未修改的原始值，蓝条比例错误。
+        // ===================================================================
         if (event.phase == TickEvent.Phase.START) {
             int ocLevel = EnchantHelper.getLevel(main, ModEnchantments.OVER_CAPACITY);
 
@@ -98,8 +102,11 @@ public class GunStateHandler {
             return;
         }
 
-        // ========== Phase.END: 弹药回收/熟练手逻辑 ==========
+        // ===================================================================
+        //  Phase.END: 熟练手换弹逻辑 — 仅服务端执行（涉及 AmmoCount 修改）
+        // ===================================================================
         if (event.phase != TickEvent.Phase.END) return;
+        if (!serverSide) return;
 
         int curAmmo = tag.getInteger(AMMO_KEY);
         int maxAmmo = tag.getInteger("MaxAmmo");

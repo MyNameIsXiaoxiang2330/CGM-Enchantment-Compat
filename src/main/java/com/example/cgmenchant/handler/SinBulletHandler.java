@@ -90,7 +90,7 @@ public class SinBulletHandler {
         UUID uid = shooter.getUniqueID();
         if (charges.containsKey(uid)) return;
 
-        CommandCGMEnchant.sendDialogue(shooter, CommandCGMEnchant.getRandomDialogue());
+        DialogueManager.sendRandom(shooter, "fellbullet");
         BlockPos pos = target.getPosition();
         SinCharge charge = new SinCharge(
             target.world, uid,

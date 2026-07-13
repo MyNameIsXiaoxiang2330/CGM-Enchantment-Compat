@@ -53,7 +53,7 @@ public class ArcLightHandler {
         EntityPlayer shooter = findShooter(event);
         if (shooter == null) return;
 
-        int arcLevel = EnchantHelper.getLevel(shooter, ModEnchantments.ARC_LIGHT);
+        int arcLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.ARC_LIGHT);
         if (arcLevel <= 0) return;
 
         World world = event.getWorld();

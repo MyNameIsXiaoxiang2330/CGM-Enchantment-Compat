@@ -24,3 +24,5 @@ enchantment.cgmenchant.fellbullet=FELLBULLET
 enchantment.cgmenchant.fellbullet.desc=Summons ground crosshair circles on kill, 360\u00B0 scatter after charge
 enchantment.cgmenchant.fellbullet_piercer=FELLBULLET Piercer
 enchantment.cgmenchant.fellbullet_piercer.desc=Summons rear circle on kill, cone scatter along bullet trajectory
+enchantment.cgmenchant.Soleme_lament=Solemn Mourning
+enchantment.cgmenchant.Soleme_lament.desc=Bullets home toward nearby enemies with black-and-white particle trails

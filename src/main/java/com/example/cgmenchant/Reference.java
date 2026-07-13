@@ -21,7 +21,7 @@ package com.example.cgmenchant;
 public class Reference {
     public static final String MOD_ID = "cgmenchant";
     public static final String MOD_NAME = "MrCrayfish\u7684\u67AA: \u9644\u9B54\u517C\u5BB9"; // MrCrayfish的枪: 附魔兼容
-    public static final String VERSION = "0.0.8";
+    public static final String VERSION = "0.0.8.001";
 
     /** CGM 主模组 ID */
     public static final String CGM_MOD_ID = "cgm";

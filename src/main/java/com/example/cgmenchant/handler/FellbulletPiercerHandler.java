@@ -98,7 +98,7 @@ public class FellbulletPiercerHandler {
 
         boolean isShotgun = gunId.contains("shotgun");
 
-        CommandCGMEnchant.sendDialogue(shooter, CommandCGMEnchant.getRandomDialogue());
+        DialogueManager.sendRandom(shooter, "fellbullet_piercer");
 
         PiercerCharge charge = new PiercerCharge(
             target.world, uid,

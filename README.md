@@ -14,7 +14,7 @@ _[English](#english) | [中文](#中文)_
 
 Restores high-version gun enchantments for [MrCrayfish's Gun Mod](https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-gun-mod) (CGM) v0.15.3 on Minecraft 1.12.2, plus original enchantments inspired by *Limbus Company* EGO.
 
-> **Current build:** `0.0.7.009` (Dev) — versions 0.0.7.000~009 are development builds.
+> **Current build:** `0.0.8.001` (Dev)
 >
 > **Note:** CGM v0.15.3 (1.12.2) does not expose `getItemEnchantability()` on `ItemGun`, nor does it provide a hook for dynamic max-ammo in the reload system. This mod works around both limitations with a minimal CoreMod. See [`docs/COREMOD.md`](docs/COREMOD.md) for the technical details.
 
@@ -123,7 +123,7 @@ Requirements:
 
 为 [MrCrayfish's Gun Mod](https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-gun-mod) (CGM) v0.15.3 (Minecraft 1.12.2) 还原高版本枪械附魔，并包含受 *边狱公司 (Limbus Company)* EGO 启发的原创附魔。
 
-> **当前版本:** `0.0.8` (公开测试版)
+> **当前版本:** `0.0.8.001` (开发版)
 
 ---
 

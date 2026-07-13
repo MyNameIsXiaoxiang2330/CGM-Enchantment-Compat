@@ -47,7 +47,7 @@ public class PlayerHandler {
         AttributeModifier existing = movement.getModifier(SPEED_ID);
 
         if (holdingGun && player.isHandActive() && !player.isSprinting()) {
-            int level = EnchantHelper.getLevel(player, ModEnchantments.LIGHTWEIGHT);
+            int level = EnchantHelper.getGunLevel(player, ModEnchantments.LIGHTWEIGHT);
             if (level > 0) {
                 // 移速 +20%/级
                 double bonus = 0.20 * level;

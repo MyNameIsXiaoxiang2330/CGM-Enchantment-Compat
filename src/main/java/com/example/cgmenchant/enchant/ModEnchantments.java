@@ -135,6 +135,10 @@ public class ModEnchantments {
     public static final EnchantmentGunBase FELLBULLET_PIERCER = add(
         new EnchantmentFellbulletPiercer());
 
+    // ==== 庄严哀悼 (Solemn Mourning) — 子弹追踪 + 黑白拖尾 ====
+    public static final EnchantmentGunBase SOLEMN_MOURNING = add(
+        new EnchantmentSolemnMourning());
+
     private static EnchantmentGunBase add(EnchantmentGunBase e) {
         ENCHANTMENTS.add(e);
         return e;

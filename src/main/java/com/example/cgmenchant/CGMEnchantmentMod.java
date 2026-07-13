@@ -20,12 +20,16 @@ package com.example.cgmenchant;
 
 import com.example.cgmenchant.enchant.ModEnchantments;
 import com.example.cgmenchant.handler.*;
+import com.example.cgmenchant.potion.PotionVulnerability;
+import net.minecraft.potion.Potion;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.Logger;
 
 @Mod(
@@ -63,6 +67,7 @@ public class CGMEnchantmentMod {
         MinecraftForge.EVENT_BUS.register(new SinBulletHandler());
         MinecraftForge.EVENT_BUS.register(new FellbulletPiercerHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerJoinHandler());
+        MinecraftForge.EVENT_BUS.register(new SolemnMourningHandler());
         logger.info("Event handlers registered");
     }
 
@@ -73,9 +78,19 @@ public class CGMEnchantmentMod {
 
     @EventHandler
     public void serverStart(FMLServerStartingEvent event) {
+        DialogueManager.init(); // 加载外置台词配置
         event.registerServerCommand(new CommandCGMEnchant());
         logger.info("/cgmen command registered");
     }
 
     public static Logger getLogger() { return logger; }
+
+    @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
+    public static class Registration {
+        @SubscribeEvent
+        public static void registerPotions(RegistryEvent.Register<Potion> event) {
+            event.getRegistry().register(new PotionVulnerability());
+            logger.info("Registered Vulnerability potion effect");
+        }
+    }
 }

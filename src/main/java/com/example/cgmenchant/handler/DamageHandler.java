@@ -48,13 +48,13 @@ public class DamageHandler {
         float damage = event.getAmount();
 
         // 加速器 (Accelerator): 伤害 +10%/级
-        int accelLevel = EnchantHelper.getLevel(shooter, ModEnchantments.ACCELERATOR);
+        int accelLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.ACCELERATOR);
         if (accelLevel > 0) {
             damage += damage * 0.1f * accelLevel;
         }
 
         // 穿甲弹 (Puncturing): 忽视护甲
-        int punctLevel = EnchantHelper.getLevel(shooter, ModEnchantments.PUNCTURING);
+        int punctLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.PUNCTURING);
         if (punctLevel > 0) {
             float armorIgnore = 0.25f * punctLevel;
             float armorReduction = getArmorReduction(target);
@@ -62,13 +62,13 @@ public class DamageHandler {
         }
 
         // 纵火者 (Fire Starter): 点燃（方块火焰由 BulletHandler 在子弹消失时放置）
-        int fireLevel = EnchantHelper.getLevel(shooter, ModEnchantments.FIRE_STARTER);
+        int fireLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.FIRE_STARTER);
         if (fireLevel > 0) {
             target.setFire(5);
         }
 
         // 弧光引导 (ArcLight): 纯视觉闪电 + 充能苦力怕 + 魔法伤害
-        int arcLevel = EnchantHelper.getLevel(shooter, ModEnchantments.ARC_LIGHT);
+        int arcLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.ARC_LIGHT);
         if (arcLevel > 0) {
             BlockPos pos = target.getPosition();
             EntityLightningBolt bolt = new EntityLightningBolt(target.world, pos.getX(), pos.getY(), pos.getZ(), true);
@@ -91,8 +91,8 @@ public class DamageHandler {
         event.setAmount(damage);
 
         // ==== 凶弹基础增伤：每级+25%枪械基础伤害 ====
-        int fellLevel = EnchantHelper.getLevel(shooter, ModEnchantments.FELLBULLET);
-        int piercerLevel = EnchantHelper.getLevel(shooter, ModEnchantments.FELLBULLET_PIERCER);
+        int fellLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.FELLBULLET);
+        int piercerLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.FELLBULLET_PIERCER);
         int fellLvl = Math.max(fellLevel, piercerLevel);
         if (fellLvl > 0) {
             ItemStack gun = shooter.getHeldItemMainhand();
@@ -115,7 +115,7 @@ public class DamageHandler {
         }
 
         // ==== 勤俭节约：命中目标后概率回复弹药 ====
-        int thriftyLevel = EnchantHelper.getLevel(shooter, ModEnchantments.RECLAIMED);
+        int thriftyLevel = EnchantHelper.getGunLevel(shooter, ModEnchantments.RECLAIMED);
         if (thriftyLevel > 0) {
             ItemStack gun = shooter.getHeldItemMainhand();
             if (!EnchantHelper.isGun(gun)) {
